@@ -49,6 +49,14 @@ Run in this order; each gates the next:
 3. `/land-and-deploy` — merge, deploy, verify production health
 4. `/document-release` — sync README / CLAUDE.md / standards with what shipped
 
+**Without gstack.** When `/ship` and `/land-and-deploy` are unavailable
+(gstack not installed in the current environment), substitute the bundled
+**`/push2gh`** project skill — it covers the commit → push → PR → optional
+automerge → cleanup arc. It is language-neutral and is installed at
+`.claude/skills/push2gh/SKILL.md` by `install.sh`. `/review` and
+`/document-release` still need manual substitutes (a careful diff read and
+a manual README/CHANGELOG sync respectively).
+
 ### Phase continuation rules
 - If the user explicitly continues an in-progress phase (e.g., "Phase 3 계속", "플랜 수정", 이미 열려있는 design doc 편집), proceed without re-checking earlier phases.
 - If the user explicitly overrides ("간단한 버그 수정이니 phase 건너뛰어"), confirm the task truly doesn't need the pipeline, then proceed.
