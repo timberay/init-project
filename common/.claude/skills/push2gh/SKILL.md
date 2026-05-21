@@ -83,7 +83,10 @@ test -f .github/workflows/automerge.yml \
 ### Solo mode detection (sets `SOLO=0|1` used by Phases 2A.3, 3, 5)
 
 ```bash
-if [[ "${PUSH2GH_SOLO:-0}" == "1" ]] || [[ -f .git/.push2gh-solo ]]; then
+if [[ "${PUSH2GH_SOLO:-0}" == "1" ]] \
+   || [[ -f .git/.push2gh-solo ]] \
+   || [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/push2gh/solo" ]] \
+   || [[ -f "$HOME/.push2gh-solo" ]]; then
   SOLO=1
 else
   SOLO=0
@@ -354,15 +357,31 @@ deletion, secret scan still blocking.
 
 ### Trigger
 
-Solo mode activates when EITHER signal is present (evaluated in Phase 0):
+Solo mode activates when ANY of these signals is present (evaluated in Phase 0):
 
 ```bash
-[[ "${PUSH2GH_SOLO:-0}" == "1" ]] || [[ -f .git/.push2gh-solo ]]
+[[ "${PUSH2GH_SOLO:-0}" == "1" ]] \
+  || [[ -f .git/.push2gh-solo ]] \
+  || [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/push2gh/solo" ]] \
+  || [[ -f "$HOME/.push2gh-solo" ]]
 ```
 
-Set the env var for a single shell session, or `touch .git/.push2gh-solo` to
-opt in permanently for one repo (the `.git/` directory is not tracked, so the
-marker never leaks into git history).
+Three layers, from most ephemeral to most persistent:
+
+| Layer         | How                                                                   | Scope                       |
+|---------------|-----------------------------------------------------------------------|-----------------------------|
+| Env var       | `PUSH2GH_SOLO=1 ...` before the call                                  | One shell invocation        |
+| Repo marker   | `touch .git/.push2gh-solo` once                                       | One repo, permanent         |
+| Global marker | `touch ~/.push2gh-solo` (or `mkdir -p ~/.config/push2gh && touch ~/.config/push2gh/solo`) | Every repo on this machine |
+
+For a 1-person AI-driven-develop team where every repo is solo by default,
+**the global marker is the natural setting — set it once and stop thinking
+about it.** The repo marker is useful as an override in an otherwise
+non-solo setup. The env var is for one-off CI runs or scripted automation.
+
+There is no inverse signal (no "force off") — to disable solo mode for a
+single repo when the global marker is set, ignore the per-repo / env-var
+layers and skip the skill, or temporarily move the global marker aside.
 
 ### Behavior changes
 
