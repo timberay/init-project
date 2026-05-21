@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "if command -v uv >/dev/null && [ -f pyproject.toml ]; then uv run pytest -q > /tmp/pytest_output.txt 2>&1; rc=$?; else pytest -q > /tmp/pytest_output.txt 2>&1; rc=$?; fi; if [ $rc -ne 0 ]; then jq -n --rawfile out /tmp/pytest_output.txt '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:(\"pytest failed. Diagnose the failures, fix the code, and retry the commit.\\n\\n--- pytest -q output ---\\n\" + $out)}}'; fi",
+            "timeout": 120,
+            "statusMessage": "Running pytest before commit..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "if command -v uv >/dev/null && [ -f pyproject.toml ]; then uv run ruff check . > /tmp/ruff_output.txt 2>&1; rc=$?; else ruff check . > /tmp/ruff_output.txt 2>&1; rc=$?; fi; if [ $rc -ne 0 ]; then jq -n --rawfile out /tmp/ruff_output.txt '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:(\"Ruff violations found. Run `ruff check --fix .` then `ruff format .`, re-stage, and retry.\\n\\n--- ruff check output ---\\n\" + $out)}}'; fi",
+            "timeout": 60,
+            "statusMessage": "Running ruff before commit..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r f; if [[ \"$f\" == *.py ]] && command -v ruff >/dev/null; then ruff format \"$f\" >/dev/null 2>&1; ruff check \"$f\" 2>&1; fi; } 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Formatting and linting Python file..."
+          }
+        ]
+      }
+    ]
+  }
+}
