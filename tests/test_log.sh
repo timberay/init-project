@@ -40,4 +40,19 @@ out="$(NO_COLOR=1 log_info "plain" 2>&1)"
 [[ "$out" != *$'\e['* ]] || fail "NO_COLOR did not suppress ANSI escapes"
 ok "NO_COLOR honored"
 
+# log_warn must write to stderr, not stdout.
+out_stdout="$(log_warn "to-stderr" 2>/dev/null)"
+[[ -z "$out_stdout" ]] || fail "log_warn leaked to stdout: $out_stdout"
+ok "log_warn routes to stderr"
+
+# log_error must write to stderr, not stdout.
+out_stdout="$(log_error "to-stderr" 2>/dev/null)"
+[[ -z "$out_stdout" ]] || fail "log_error leaked to stdout: $out_stdout"
+ok "log_error routes to stderr"
+
+# log_section header marker (==) must appear, not just the label.
+out="$(log_section "Sec" 2>&1)"
+[[ "$out" == *"== Sec =="* ]] || fail "log_section missing == ==: $out"
+ok "log_section delimiters"
+
 echo "test_log.sh: ALL PASS"

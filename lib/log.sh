@@ -1,6 +1,11 @@
 # lib/log.sh — color logger for install.sh and lib/* modules.
 # Source this file; do not execute it directly.
 
+# NOTE: NO_COLOR and TTY detection are evaluated ONCE at source-time. To force
+# plain output, export NO_COLOR=1 BEFORE sourcing this file. Toggling NO_COLOR
+# afterwards has no effect because the color codes are captured into _LOG_C_*
+# at source time.
+
 # Respect NO_COLOR (https://no-color.org/) and the absence of a TTY.
 if [[ -n "${NO_COLOR:-}" || ! -t 1 ]]; then
   _LOG_C_RESET=""
