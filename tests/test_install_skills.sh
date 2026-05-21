@@ -21,6 +21,7 @@ CALLS="$TMP/claude_calls.log"
 # Fake `claude`: records args; for `plugin marketplace list` and `plugin list`
 # it emits lines controlled by env vars (CLAUDE_FAKE_MARKETPLACES /
 # CLAUDE_FAKE_PLUGINS), so the test can simulate "already installed".
+mkdir -p "$TMP/bin"
 cat > "$TMP/bin/claude" <<'EOSH'
 #!/usr/bin/env bash
 echo "$*" >> "${CLAUDE_CALLS_LOG}"
@@ -31,19 +32,6 @@ fi
 if [[ "$1" == "plugin" && "$2" == "list" ]]; then
   printf '%s\n' ${CLAUDE_FAKE_PLUGINS:-}
   exit 0
-fi
-exit 0
-EOSH
-mkdir -p "$TMP/bin"
-mv "$TMP/bin/claude" "$TMP/bin/claude.tmp" 2>/dev/null || true
-cat > "$TMP/bin/claude" <<'EOSH'
-#!/usr/bin/env bash
-echo "$*" >> "${CLAUDE_CALLS_LOG}"
-if [[ "$1" == "plugin" && "$2" == "marketplace" && "$3" == "list" ]]; then
-  printf '%s\n' ${CLAUDE_FAKE_MARKETPLACES:-}; exit 0
-fi
-if [[ "$1" == "plugin" && "$2" == "list" ]]; then
-  printf '%s\n' ${CLAUDE_FAKE_PLUGINS:-}; exit 0
 fi
 exit 0
 EOSH
