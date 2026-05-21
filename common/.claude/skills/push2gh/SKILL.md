@@ -80,6 +80,20 @@ test -f .github/workflows/automerge.yml \
   ```
 - On a feature branch? → Proceed.
 
+### Solo mode detection (sets `SOLO=0|1` used by Phases 2A.3, 3, 5)
+
+```bash
+if [[ "${PUSH2GH_SOLO:-0}" == "1" ]] || [[ -f .git/.push2gh-solo ]]; then
+  SOLO=1
+else
+  SOLO=0
+fi
+```
+
+When `SOLO=1`, several confirmation prompts collapse and the PR-body template
+changes — see the **Solo Mode** section below for the full list. Always surface
+the chosen mode in the final decision log so the user can spot a misdetection.
+
 ### Fast-path: "nothing to do but clean up"
 
 Before running Phase 1, check whether this invocation is really a **post-merge cleanup call** rather than a fresh push:
@@ -327,6 +341,136 @@ After success, report concisely:
 ```
 
 Show only the lines that apply; omit irrelevant ones.
+
+---
+
+## Solo Mode
+
+When the maintainer is the only developer on the repo (1-person AI-driven-develop
+team), several confirmation prompts and review-gate templates become friction
+instead of safety. Solo mode trades a few prompts for speed while keeping every
+hard safety guard intact — no `--admin`, no `--force`, no unmerged-branch
+deletion, secret scan still blocking.
+
+### Trigger
+
+Solo mode activates when EITHER signal is present (evaluated in Phase 0):
+
+```bash
+[[ "${PUSH2GH_SOLO:-0}" == "1" ]] || [[ -f .git/.push2gh-solo ]]
+```
+
+Set the env var for a single shell session, or `touch .git/.push2gh-solo` to
+opt in permanently for one repo (the `.git/` directory is not tracked, so the
+marker never leaks into git history).
+
+### Behavior changes
+
+| Area                              | Default                       | Solo mode (`SOLO=1`)                                                  |
+|-----------------------------------|-------------------------------|-----------------------------------------------------------------------|
+| Phase 2A.3 `automerge` label      | Ask user before applying      | Apply automatically when CI gates exist; still skip if `needs-human-review` is set |
+| Phase 3 `gh pr merge --auto`      | Ask user                      | Apply automatically                                                   |
+| Phase 5 local branch deletion     | Per-branch confirm            | Delete every branch whose PR is MERGED, no prompt                     |
+| Phase 5 remote branch deletion    | Per-branch confirm            | **Unchanged** — remote deletions are irreversible, prompt always      |
+| PR body template                  | "Summary + Test plan"         | "What / Why / Alternatives / Trade-offs" decision-log template        |
+| `Co-Authored-By` trailer          | Always added                  | Added to PR-head commits only; omitted on direct pushes to default    |
+| Branch naming (default branch + uncommitted work) | Ask  | Auto-name from Conventional Commits: `<type>/<scope>/<slug>`          |
+
+What does NOT change in solo mode:
+
+- The secret scan in Phase 1.2 is still blocking
+- `gh pr merge --admin` is still forbidden
+- `git push --force` is still forbidden (`--force-with-lease` still requires explicit user request)
+- Branches with unmerged content are never deleted
+- `needs-human-review` label still blocks automerge
+
+### Branch-name auto-generation
+
+When `SOLO=1`, the user is on the default branch with uncommitted work, and
+the imminent commit subject follows Conventional Commits, derive a branch
+name automatically before checking out:
+
+```bash
+SUBJECT="${COMMIT_SUBJECT:-$(git log -1 --format=%s 2>/dev/null)}"
+TYPE=$(echo "$SUBJECT"  | sed -n 's/^\([a-z]*\)\(([^)]*)\)\?:.*/\1/p')
+SCOPE=$(echo "$SUBJECT" | sed -n 's/^[a-z]*(\([^)]*\)):.*/\1/p')
+SLUG=$(echo "$SUBJECT"  | sed -E 's/^[a-z]+(\([^)]*\))?:[[:space:]]*//' \
+                        | tr '[:upper:]' '[:lower:]' \
+                        | tr -cs 'a-z0-9' '-' \
+                        | sed -E 's/^-+|-+$//g' \
+                        | cut -c1-40)
+BRANCH="${TYPE:-chore}${SCOPE:+/$SCOPE}/$SLUG"
+git checkout -b "$BRANCH"
+```
+
+Examples:
+
+| Commit subject                                | Generated branch          |
+|-----------------------------------------------|---------------------------|
+| `feat(auth): add login flow`                  | `feat/auth/login-flow`    |
+| `fix: handle empty config`                    | `fix/handle-empty-config` |
+| `refactor(api): split controller`             | `refactor/api/split-controller` |
+| `add a thing` (non-conventional)              | `chore/add-a-thing` + warning |
+
+If the subject is non-conventional, fall back to `chore/<slug>` and emit a
+warning so the user can rename before pushing.
+
+### Decision-log PR body
+
+When `SOLO=1`, use this template instead of the default "Summary + Test plan":
+
+```markdown
+## What
+<one-paragraph summary of the change>
+
+## Why
+<the motivation — what triggered this, what problem it solves, what assumption
+it confirms or breaks>
+
+## Alternatives considered
+- <option you rejected, with the reason>
+- <option you rejected, with the reason>
+
+## Trade-offs
+<what you gave up for what you gained — performance, simplicity, future
+flexibility, etc.>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+A test-plan checklist has low value to a solo maintainer re-reading their own
+work; a decision narrative has high value six months later when revisiting
+the diff. The trade-off is intentional.
+
+### Size-based routing hint (advisory, solo only)
+
+When `SOLO=1` and the user is on the default branch with uncommitted changes,
+compute the change size to suggest the right flow:
+
+```bash
+DELTA_LOC=$(git diff --stat | tail -1 | awk '{print $4+$6+0}')
+HAS_SCHEMA=$(git diff --name-only | grep -cE 'migrate|migration|schema\.(rb|sql)|.*\.lock$' || true)
+```
+
+- `DELTA_LOC < 50` AND `HAS_SCHEMA == 0` → suggest direct commit on the default
+  branch (Flow C), no branch / no PR. Faster turnaround for small fixes.
+- Otherwise → suggest a feature branch + PR (Flow A/B). Larger or
+  migration-bearing changes deserve the PR review surface even when nobody
+  else will read it.
+
+This is a hint, not a forced route — the user can always override.
+
+### Decision log row for solo mode
+
+The Phase 0 / final-summary decision log MUST include one new line whenever
+solo mode is active:
+
+```
+  🧍 Mode      : SOLO (auto-confirm: automerge, branch delete; decision-log PR body)
+```
+
+When `SOLO=0`, omit the line entirely. This keeps non-solo invocations
+unchanged.
 
 ---
 
