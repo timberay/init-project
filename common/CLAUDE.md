@@ -158,3 +158,18 @@ checks `~/.claude/skills/<name>/` and warns if absent). `gstack` is required for
 `WORKFLOW.md` phases 1, 2, and 6 (`/office-hours`, `/plan-eng-review`,
 `/review`, `/ship`, `/land-and-deploy`, `/document-release`). Install them
 manually if missing.
+
+### Bundled project skills
+
+The installer also copies the following skill straight into
+`.claude/skills/<name>/` so it lives inside the project's git history:
+
+| Skill      | Purpose                                                                   |
+|------------|---------------------------------------------------------------------------|
+| `push2gh`  | Adaptive commit → push → PR → optional automerge → cleanup. Use as a `gstack`-free substitute for `/ship` + `/land-and-deploy` in `WORKFLOW.md` phase 6. |
+
+The bundled copy is a snapshot of the global `~/.claude/skills/push2gh/`
+taken at template build time. To upgrade, copy the latest file back into
+the template (`cp ~/.claude/skills/push2gh/SKILL.md
+~/projects/00.base-files/common/.claude/skills/push2gh/SKILL.md`) and
+commit.

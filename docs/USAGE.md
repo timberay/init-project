@@ -457,8 +457,11 @@ After a successful run, the target project contains:
 └── .claude/
     ├── settings.json                  # Merged hook config: graphify reminder + pipeline reminder +
     │                                  #   pre-commit (test runner + linter) + post-Write/Edit auto-format
-    └── hooks/
-        └── pipeline-reminder.txt      # Context injected by the UserPromptSubmit hook
+    ├── hooks/
+    │   └── pipeline-reminder.txt      # Context injected by the UserPromptSubmit hook
+    └── skills/
+        └── push2gh/
+            └── SKILL.md               # Project-bundled skill: commit → push → PR → cleanup
 ```
 
 ### What each file is for
@@ -538,6 +541,34 @@ absent:
 If `gstack` is absent, you can still use the template — phases 3, 4, 5 work
 with `superpowers` alone — but phases 1, 2, and 6 need manual product /
 architecture / release notes in place of the missing skills.
+
+### Bundled project skills
+
+The installer also lands the following skill directly into
+`<project>/.claude/skills/<name>/` — these live inside your project's git
+history (no global `~/.claude/skills/` dependency):
+
+| Skill      | Where it lands                              | Purpose                                                                       |
+|------------|---------------------------------------------|-------------------------------------------------------------------------------|
+| `push2gh`  | `<project>/.claude/skills/push2gh/SKILL.md` | Commit → push → PR → optional automerge → cleanup. Use as a `gstack`-free substitute for `/ship` + `/land-and-deploy` in `WORKFLOW.md` phase 6. |
+
+**Updating bundled skills.** Bundled skill bodies are **snapshots** taken
+when the template was built. To pull a newer copy from your global skills
+directory:
+
+```bash
+cp ~/.claude/skills/push2gh/SKILL.md \
+   ~/projects/00.base-files/common/.claude/skills/push2gh/SKILL.md
+
+cd ~/projects/00.base-files
+git diff common/.claude/skills/push2gh/SKILL.md      # review the delta
+git add common/.claude/skills/push2gh/SKILL.md
+git commit -m "chore: refresh push2gh skill snapshot"
+git push
+```
+
+Downstream projects pick up the new snapshot the next time they run
+`install.sh --force`.
 
 ### Using superpowers in a fresh project
 

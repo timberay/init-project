@@ -67,6 +67,15 @@ both live outside the claude plugin marketplaces. `gstack` is referenced by
 `WORKFLOW.md` phases 1, 2, and 6; install it manually if you want the full
 pipeline. Without it, those phases need manual substitutes.
 
+### Bundled project skills (installed into the project itself)
+
+| Skill      | Where it lands                              | Purpose                                                              |
+|------------|---------------------------------------------|----------------------------------------------------------------------|
+| `push2gh`  | `<project>/.claude/skills/push2gh/SKILL.md` | Commit → push → PR → optional automerge → cleanup. `gstack`-free phase 6 substitute. |
+
+Bundled skills are snapshots committed into this template. They are upgraded
+manually — see `docs/USAGE.md` for the resync procedure.
+
 ## Hacking on this template
 
 Run the test suite from the template root:
