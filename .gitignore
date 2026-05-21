@@ -1,0 +1,12 @@
+# Installer backups created by install.sh --force / per-file overwrite prompt
+*.bak.[0-9]*
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Test artefacts
+tests/tmp/
