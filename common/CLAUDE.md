@@ -121,6 +121,31 @@ For multi-step tasks, state a brief plan:
 Strong success criteria let you loop independently. Weak criteria ("make it
 work") require constant clarification.
 
+### 5. Ask Selectively
+
+**Ask only when the answer changes direction. Decide and proceed otherwise.**
+
+Before asking the user, check whether the answer actually changes what you
+would do.
+
+Ask when:
+- The choice changes architecture, scope, or implementation direction.
+- The action is hard to reverse — destructive, or affects shared/external
+  systems.
+- You need information only the user has (credentials, business context,
+  external constraints).
+
+Do **not** ask when:
+- You are merely confirming a recommendation you are already confident in.
+  Pick it and state the choice in your response so the user can redirect.
+- One option is clearly better given the project's conventions or the rules
+  in this document.
+- The decision is a trivial detail — naming, formatting, minor implementation
+  choices. Apply existing conventions and move on.
+
+User time is the scarcest resource. When confident, act and document the
+choice; if the choice turns out wrong, reverse it then.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer
