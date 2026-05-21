@@ -25,6 +25,9 @@ ok "dry-run detects rails and writes nothing"
 grep -q "Rails" "$TMP/docs/standards/STACK.md" || fail "STACK.md does not look like the Rails overlay"
 jq -e '.hooks.PreToolUse | length >= 2' "$TMP/.claude/settings.json" >/dev/null \
   || fail "merged settings.json should have at least 2 PreToolUse entries"
+[[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
+head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+ok "push2gh skill bundled"
 ok "real run installs rails overlay"
 
 echo "smoke_rails.sh: ALL PASS"

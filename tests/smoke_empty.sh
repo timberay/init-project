@@ -22,6 +22,9 @@ ok "non-interactive empty dir rejected with hint"
 # With --lang go, it succeeds.
 ( cd "$TMP" && "$ROOT/install.sh" --lang go --force --skip-skills >/dev/null 2>&1 ) || fail "install with --lang go failed"
 grep -q "Go" "$TMP/docs/standards/STACK.md" || fail "Go overlay not applied"
+[[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
+head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+ok "push2gh skill bundled"
 ok "--lang override works in empty dir"
 
 echo "smoke_empty.sh: ALL PASS"

@@ -19,6 +19,9 @@ ok "dry-run detects go"
 grep -q "Go" "$TMP/docs/standards/STACK.md" || fail "STACK.md does not look like the Go overlay"
 jq -e '.hooks.PostToolUse[0].hooks[0].command | contains("gofmt")' "$TMP/.claude/settings.json" >/dev/null \
   || fail "PostToolUse hook should reference gofmt"
+[[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
+head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+ok "push2gh skill bundled"
 ok "real run installs go overlay"
 
 echo "smoke_go.sh: ALL PASS"
