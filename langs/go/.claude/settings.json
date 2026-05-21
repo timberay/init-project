@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "if command -v go >/dev/null && [ -f go.mod ]; then go test ./... > /tmp/gotest_output.txt 2>&1; rc=$?; if [ $rc -ne 0 ]; then jq -n --rawfile out /tmp/gotest_output.txt '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:(\"go test failed. Diagnose and fix before retrying the commit.\\n\\n--- go test ./... output ---\\n\" + $out)}}'; fi; fi",
+            "timeout": 180,
+            "statusMessage": "Running go test before commit..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "if command -v golangci-lint >/dev/null && [ -f go.mod ]; then golangci-lint run > /tmp/golint_output.txt 2>&1; rc=$?; if [ $rc -ne 0 ]; then jq -n --rawfile out /tmp/golint_output.txt '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:(\"golangci-lint violations found. Run `golangci-lint run --fix`, re-stage, retry.\\n\\n--- golangci-lint run output ---\\n\" + $out)}}'; fi; fi",
+            "timeout": 90,
+            "statusMessage": "Running golangci-lint before commit..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r f; if [[ \"$f\" == *.go ]] && command -v gofmt >/dev/null; then gofmt -w \"$f\" >/dev/null 2>&1; go vet ./... 2>&1; fi; } 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Formatting and vetting Go file..."
+          }
+        ]
+      }
+    ]
+  }
+}
