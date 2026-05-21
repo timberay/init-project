@@ -41,7 +41,7 @@ detect_language() {
     return 3
   fi
 
-  log_warn "no language manifest detected in $(pwd)" >&2
+  log_warn "no language manifest detected in $(pwd)"
   printf 'Select language: ' >&2
   local choice
   select choice in "${_BASE_FILES_LANGS[@]}"; do

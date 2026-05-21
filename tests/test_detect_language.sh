@@ -65,22 +65,22 @@ r=$(detect_in "$TMP/rails-but-py" "python")
 [[ "$r" == "python" ]] || fail "--lang python override (got '$r')"
 ok "override beats detection"
 
-# Case 8: invalid override exits non-zero
+# Case 8: invalid override exits with code 2 specifically
 set +e
 ( cd "$TMP/rails-proj" && detect_language "nodejs" ) >/dev/null 2>&1
 rc=$?
 set -e
-[[ "$rc" -ne 0 ]] || fail "invalid override should exit non-zero (got $rc)"
-ok "invalid override rejected"
+[[ "$rc" -eq 2 ]] || fail "invalid override should exit with code 2 (got $rc)"
+ok "invalid override rejected with rc=2"
 
-# Case 9: ambiguous (no manifest, no override) -> non-zero AND prints hint to stderr
+# Case 9: ambiguous (no manifest, no override) -> exit code 3 AND prints hint to stderr
 mkdir "$TMP/empty-proj"
 set +e
 err=$( ( cd "$TMP/empty-proj" && BASE_FILES_NONINTERACTIVE=1 detect_language "" ) 2>&1 1>/dev/null )
 rc=$?
 set -e
-[[ "$rc" -ne 0 ]] || fail "ambiguous in non-interactive mode should exit non-zero"
+[[ "$rc" -eq 3 ]] || fail "ambiguous in non-interactive mode should exit with code 3 (got $rc)"
 [[ "$err" == *"--lang"* ]] || fail "ambiguous error should mention --lang (got: $err)"
-ok "ambiguous in non-interactive mode rejected"
+ok "ambiguous in non-interactive mode rejected with rc=3"
 
 echo "test_detect_language.sh: ALL PASS"
