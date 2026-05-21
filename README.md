@@ -6,6 +6,10 @@ project directory.
 
 Supported overlays: **Rails 8 · Python (FastAPI/Django) · Go**.
 
+> For the full reference (every flag, every phase, walkthroughs per language,
+> troubleshooting, and how to add a new language overlay), see
+> [`docs/USAGE.md`](docs/USAGE.md).
+
 ## Quick start
 
 ```bash
