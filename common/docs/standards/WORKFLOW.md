@@ -22,7 +22,7 @@ New feature work flows through six phases: four design phases (1–4) that separ
 
 #### Phase 3 — Technical Design
 - **Skill**: `/superpowers:brainstorming`
-- **Answers**: Rails patterns, concurrency, caching, test strategy
+- **Answers**: framework patterns, concurrency, caching, test strategy (see `STACK.md` for the language-specific concerns)
 - **Input**: Phase 1 + Phase 2 docs (do not re-debate)
 - **Output**: `docs/superpowers/specs/<YYYY-MM-DD>-<feature>-design.md`
 - **Forbidden**: product re-debate, system boundary re-debate
