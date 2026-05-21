@@ -60,9 +60,12 @@ install_skills() {
     _ensure_plugin "$spec" "$dry"
   done
 
-  if [[ -d "${HOME}/.claude/skills/graphify" ]]; then
-    log_ok "graphify skill detected at ~/.claude/skills/graphify"
-  else
-    log_warn "graphify skill not found at ~/.claude/skills/graphify; install manually if you want it"
-  fi
+  # Verify (not install) skills that live outside the claude plugin marketplaces.
+  for skill in graphify gstack; do
+    if [[ -d "${HOME}/.claude/skills/${skill}" ]]; then
+      log_ok "${skill} skill detected at ~/.claude/skills/${skill}"
+    else
+      log_warn "${skill} skill not found at ~/.claude/skills/${skill}; install manually if you want it"
+    fi
+  done
 }

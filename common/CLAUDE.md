@@ -153,5 +153,8 @@ These are auto-installed by `install.sh` (skip with `--skip-skills`):
 | `code-review`                | `claude-plugins-official`  | Branch / PR review                           |
 | `andrej-karpathy-skills`     | `karpathy-skills`          | Karpathy's coding-mistake guardrails         |
 
-`graphify` is verified (not installed) by the installer; install it manually if
-absent.
+`graphify` and `gstack` are **verified, not installed** by the installer (it
+checks `~/.claude/skills/<name>/` and warns if absent). `gstack` is required for
+`WORKFLOW.md` phases 1, 2, and 6 (`/office-hours`, `/plan-eng-review`,
+`/review`, `/ship`, `/land-and-deploy`, `/document-release`). Install them
+manually if missing.

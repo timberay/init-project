@@ -62,8 +62,10 @@ The installer:
 | `code-review`             | `anthropics/claude-plugins-official`      | Branch / PR review                     |
 | `andrej-karpathy-skills`  | `forrestchang/andrej-karpathy-skills`     | Karpathy coding guardrails             |
 
-`graphify` is **verified** (not installed) by the installer. Install it
-manually if you want knowledge-graph-driven code search.
+`graphify` and `gstack` are **verified** (not installed) by the installer —
+both live outside the claude plugin marketplaces. `gstack` is referenced by
+`WORKFLOW.md` phases 1, 2, and 6; install it manually if you want the full
+pipeline. Without it, those phases need manual substitutes.
 
 ## Hacking on this template
 

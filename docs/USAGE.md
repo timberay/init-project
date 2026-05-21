@@ -259,8 +259,11 @@ Runs the official `claude plugin` CLI to:
    - `superpowers@claude-plugins-official`
    - `code-review@claude-plugins-official`
    - `andrej-karpathy-skills@karpathy-skills`
-3. Verify (without installing) that the `graphify` skill is present in
-   `~/.claude/skills/graphify/`. If absent, you get a warning with a hint.
+3. Verify (without installing) that the `graphify` and `gstack` skills are
+   present in `~/.claude/skills/graphify/` and `~/.claude/skills/gstack/`.
+   These two live outside the claude plugin marketplaces and are installed
+   separately by each team. If absent, you get a warning with a hint —
+   `gstack` is required for `WORKFLOW.md` phases 1, 2, and 6.
 
 This phase is **idempotent** — re-running the installer never re-adds an
 already-installed marketplace or plugin. Use `--skip-skills` to skip this
@@ -523,10 +526,18 @@ The only global side-effect is in phase 5, which uses the official
 | **`code-review`**            | `anthropics/claude-plugins-official`           | Branch/PR pre-landing review                                                   |
 | **`andrej-karpathy-skills`** | `forrestchang/andrej-karpathy-skills`          | Karpathy's coding-mistake guardrails — surgical changes, no overengineering    |
 
-These are installed by phase 5. `graphify` is **verified** (not installed):
-the installer checks for `~/.claude/skills/graphify/` and warns if absent.
-Install it separately if you want knowledge-graph-driven code search across
-large codebases.
+These are installed by phase 5. Two more skills are **verified, not
+installed** — the installer checks `~/.claude/skills/<name>/` and warns if
+absent:
+
+| Skill      | Why it lives outside the marketplaces                                 | Required for                                       |
+|------------|-----------------------------------------------------------------------|----------------------------------------------------|
+| `graphify` | Standalone CLI + skill bundle; not packaged as a claude plugin        | Knowledge-graph-driven code search (optional)      |
+| `gstack`   | Internal toolkit installed separately by each team                    | `WORKFLOW.md` phases 1, 2, 6 (`/office-hours`, `/plan-eng-review`, `/review`, `/ship`, `/land-and-deploy`, `/document-release`) |
+
+If `gstack` is absent, you can still use the template — phases 3, 4, 5 work
+with `superpowers` alone — but phases 1, 2, and 6 need manual product /
+architecture / release notes in place of the missing skills.
 
 ### Using superpowers in a fresh project
 

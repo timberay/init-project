@@ -4,6 +4,8 @@
 
 New feature work flows through six phases: four design phases (1–4) that separate product, architecture, technical design, and task breakdown, followed by execution (5) and ship (6). Do NOT skip phases. A `UserPromptSubmit` hook reminds you when a feature request is detected.
 
+> **Skill prerequisites.** Phases 3, 4, and 5 use **superpowers** skills which the template installer auto-installs (`superpowers:brainstorming`, `:writing-plans`, `:executing-plans`, `:test-driven-development`). Phases 1, 2, and 6 use **gstack** skills (`/office-hours`, `/plan-eng-review`, `/review`, `/ship`, `/land-and-deploy`, `/document-release`) which the installer **only verifies** — it expects gstack to be pre-installed at `~/.claude/skills/gstack/`. If gstack is missing, either install it separately (see your team's gstack onboarding) or substitute the listed skill with manual product/architecture/release notes; the phase boundaries themselves still apply.
+
 ### Design phases (1–4)
 
 > **Output directories**: Phase 1 and 2 are gstack skills; their outputs live under `~/.gstack/projects/<slug>/designs/` (per-developer, not committed). Phase 3 and 4 are superpowers skills; their outputs live in-repo under `docs/superpowers/` and ARE committed.
