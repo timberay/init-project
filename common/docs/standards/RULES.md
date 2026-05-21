@@ -1,180 +1,108 @@
-# Evaluation Criteria
+# Rules
 
-Testing strategy, security standards, code quality, accessibility, and performance guidelines.
+Foundational rules for how to work in this project. These are language-neutral
+and apply to every project bootstrapped from this template.
 
-## Testing Strategy
+## DRY (Don't Repeat Yourself)
 
-### Framework
+Every piece of knowledge should have a single, unambiguous representation in the
+system.
 
-- **Unit/Integration**: Minitest (Rails 8 default)
-- **System tests**: Capybara + `selenium-webdriver` (headless Chrome via `ApplicationSystemTestCase`)
-- **HTTP stubbing**: `webmock` — registered in `test/test_helper.rb`; disable real HTTP in adapter tests
-- **Controller test helpers**: `rails-controller-testing` re-enables `assigns(...)` / `assert_template` for legacy-style assertions
-- **External-app E2E**: `playwright-ruby-client` for scraper/black-box flows (see [TOOLS.md → E2E / Browser Automation](TOOLS.md#e2e--browser-automation))
-- **Performance**: No load-testing tool currently in the stack — add one (and document here) before publishing performance budgets
+- If the same value, behavior, or rule appears in three places, extract it.
+- Two occurrences may still be coincidence; three is a pattern that will drift.
+- DRY applies to documentation as well as code. Do not restate the same fact in
+  two documents — link from one to the other.
 
-### Test Pyramid (maintain this ratio)
+**Counter-rule:** Do not abstract prematurely. A single use is too early. Two
+uses may still be coincidence. Wait until the third before extracting a shared
+abstraction; otherwise you risk inventing a contract that doesn't match reality.
 
-- **Unit** (majority): Service Objects, Models, Helpers
-- **Integration** (moderate): Controller + View integration
-- **System/E2E** (few): Major user scenarios only
+## Tidy First
 
-### Test Coverage
+Separate **structural changes** from **behavioral changes**. Never mix them in
+the same commit.
 
-- Every new feature must include corresponding tests
-- Bug fixes must include a regression test that fails before the fix and passes after
+- **Structural change**: renames, moves, extract-method, inline-variable, reorder
+  imports, reformat whitespace — anything that does not change observable
+  behavior.
+- **Behavioral change**: new feature, bug fix, new branch in logic, changed
+  return value, changed side-effect.
 
-## Code Style
+When you find yourself about to mix the two, commit the structural change first
+with a `refactor:` prefix, then make the behavioral change in a separate commit.
+This makes review and rollback dramatically easier.
 
-- **Ruby**: `rubocop-rails-omakase` (run `bin/rubocop`, auto-fix with `bin/rubocop -a`)
-- **JavaScript**: No formatter is currently wired into `bin/ci`. Match existing Stimulus controller style.
-- **CSS**: TailwindCSS utility classes only — avoid introducing custom CSS
+## Small Commits
 
-## Security Best Practices
+- Commit every time a test passes.
+- Commit every time a refactoring is done.
+- Each commit should leave the system in a working state.
 
-### CSRF Protection
+The commit boundary is the smallest unit of "I am done with this." If you cannot
+describe the commit in one sentence, it is too big.
 
-Maintain Rails default settings. Never disable CSRF.
+### Commit message format
 
-### Parameter Handling
+Use [Conventional Commits](https://www.conventionalcommits.org/) style:
 
-Use `params.expect` for required structured params (Rails 8). It raises when the key is missing, so missing-key bugs surface during request parsing instead of inside actions.
+```
+<type>(<scope>): <subject>
 
-```ruby
-# Required nested params
-params.expect(article: [ :title, :body, :published ])
-
-# Optional top-level params
-params.permit(:sort_by, :page)
-params.fetch(:page, 1)
+[optional body]
 ```
 
-Do not introduce new `params.require(...).permit(...)` chains — see [STACK.md → Rails 8 — Do NOT Use](STACK.md#rails-8--do-not-use-removeddeprecated).
+Common types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`,
+`perf`. Scope is optional but helpful for monorepos.
 
-### ReDoS Prevention
+The subject line is imperative present tense ("add X", not "added X"), under 70
+characters, no trailing period.
 
-`Regexp.timeout = 1` is set by default in Rails 8.
+## Documentation Rules
 
-### XSS Prevention
+- Every public API has a one-line description of what it does, not how.
+- If a function's name and signature do not tell you what it returns or when it
+  fails, that is a naming problem — fix the name before adding a docstring.
+- Comments explain **why**, not **what**. The code shows the what; the comment
+  shows the reason a reader cannot infer.
+- README is the entry point. It must explain: what the project does, how to run
+  it locally, how to run the tests, and where to find the rest of the docs.
+- All other documentation links back to README. Documentation that is not linked
+  from somewhere will rot.
 
-- Use `sanitize` helper for user-generated content
-- Configure `content_security_policy.rb`
-- Never use `raw` or `html_safe` on untrusted input
+## AI Instruction Writing Guidelines
 
-### Rate Limiting
+When writing instructions for an AI assistant (`CLAUDE.md`, agent prompts,
+skill descriptions):
 
-Use `Rack::Attack` (`config/initializers/rack_attack.rb`) for any new rate-limited endpoint. The auth throttle is documented in [STACK.md → Authentication](STACK.md#authentication); do not redocument it here.
+1. **Be specific about boundaries.** "Don't touch unrelated code" is weaker than
+   "Edit only the files I list and do not modify imports unless necessary for
+   the change to compile."
+2. **State the goal, not just the steps.** The AI will improvise around blockers
+   if it knows what success looks like. It will get stuck on the script if it
+   only sees steps.
+3. **Anchor with examples.** A single concrete input/output pair eliminates more
+   ambiguity than a paragraph of prose.
+4. **Show counter-examples for the easy mistakes.** "Do not write `params.foo`
+   without checking it exists" beats "validate inputs."
+5. **Name the verification.** Tell the AI which command demonstrates success
+   ("run `make test FILTER=new_case` and confirm it passes"). Without
+   a verification anchor, the AI will declare victory prematurely.
+6. **Prefer "always" and "never" over "should" and "try to."** AI assistants
+   read modal verbs as suggestions. Use absolutes for the rules you actually
+   want enforced.
+7. **Avoid second-person plural.** Write "you write a failing test first" not
+   "we write a failing test first." The AI is the actor; the user is the
+   reviewer.
 
-### Credentials
+## When These Rules Bend
 
-- Use `rails credentials:edit` for secrets
-- Never commit `.env` files with real credentials
+These rules optimize for long-lived code under multiple maintainers. They are
+overkill for:
 
-## Accessibility Standards
+- Throwaway prototypes that will be deleted within a week
+- One-off data-cleanup scripts
+- Hot-fix commits on a production incident (do whatever stops the bleeding,
+  then come back and Tidy First the result)
 
-### Status Indicators
-
-Always display text labels alongside emoji statuses (e.g., "Red circle Not recommended" not just "Red circle"). Add ARIA labels for screen readers.
-
-### Keyboard Navigation
-
-Ensure all interactive elements (buttons, form inputs, links) are reachable via Tab key. Checklist question answers must be selectable via keyboard.
-
-### Form Inputs
-
-- NUMBER fields must use `inputmode="numeric"` for mobile keyboard optimization
-- Display unit suffix (%, won, year) adjacent to input
-
-### Tooltips
-
-Legal/auction terminology should have inline `help_text` tooltips, accessible via hover (desktop) and tap (mobile).
-
-### Color Independence
-
-Never rely on color alone to convey status. Always pair with text and/or icons.
-
-### Responsive Design
-
-Mobile-first approach using TailwindCSS breakpoints. Ensure touch targets are at least 44x44px.
-
-### Automated Accessibility Checks
-
-`axe-core-capybara` is wired into system tests via `ApplicationSystemTestCase`; the baseline suite at `test/system/a11y_baseline_test.rb` runs axe on critical pages. Add new pages to that test (or write a focused axe assertion) when introducing UI that materially changes structure.
-
-## Performance Guidelines
-
-### Fragment Caching
-
-Cache a fragment when **all three** are true: it renders on a hot path (search results, property list, manual page), its underlying data changes less often than once per request, and re-rendering measurably costs >50ms in dev. Use Solid Cache as the backend (configured in `config/cache.yml`). Add a Rails fragment cache key tied to the model's `updated_at` so invalidation is automatic.
-
-### Prevent N+1 Queries
-
-- Use `includes`, `preload`, `eager_load` appropriately
-- Inspect `log/development.log` for repeated `SELECT` patterns when in doubt; add the `bullet` gem to the development group if continuous monitoring becomes necessary
-
-### Off-request Work for Heavy External Calls
-
-Move slow third-party calls (LLM analysis, court-auction scraping, PDF processing) off the request path via Solid Queue jobs. The user should see a Turbo-Stream/poll update when the job finishes — never block the request.
-
-### Database Indexing
-
-Add indexes to columns frequently used for search/filtering.
-
-## Evidence-Driven Self-Diagnosis
-
-You have no eyes or memory beyond what you explicitly capture. Logs and screenshots
-are the only evidence you can use to diagnose problems autonomously — if you didn't
-record it, it doesn't exist for you.
-
-### Why This Matters
-
-- You cannot re-observe a past UI state or a transient error after it disappears.
-- Detailed evidence lets you form hypotheses and verify fixes without asking humans.
-- Vague or missing logs force you to guess, which violates the TDD principle of
-  working from facts.
-
-### What to Capture
-
-| Situation | What to Record |
-|-----------|---------------|
-| Running a command | Full stdout/stderr output, not a summary |
-| UI change | Screenshot before AND after |
-| Test failure | Complete error message, stack trace, and the test command used |
-| Unexpected behavior | Steps to reproduce, expected vs. actual result |
-| External API call | Request payload, response status, and response body |
-
-For diagnosis workflow, follow the `systematic-debugging` skill.
-
-## Code Review Checklist
-
-### Automated (by `bin/ci`)
-
-- [ ] All tests pass (`bin/rails test`)
-- [ ] No linting errors (`bin/rubocop`)
-- [ ] No security warnings (`bin/brakeman`)
-- [ ] No dependency vulnerabilities (`bin/bundler-audit`)
-- [ ] No vulnerable importmap pins (`bin/importmap audit`)
-- [ ] Seeds replant cleanly (`RAILS_ENV=test bin/rails db:seed:replant`)
-
-### Manual Review
-
-- [ ] Structural and behavioral changes are in separate commits
-- [ ] New features have corresponding tests
-- [ ] Accessibility requirements are met for UI changes
-- [ ] No N+1 queries introduced
-- [ ] Fragment caching applied where appropriate
-
-## Pre-commit Failure Recovery
-
-This project enforces commit gates via Claude Code `PreToolUse` hooks (`.claude/settings.json`). Every `git commit*` invocation runs, in order:
-
-1. `bin/rails test` — full Minitest suite (timeout 120s)
-2. `bin/rubocop --format quiet` — style check (timeout 60s)
-
-If either fails, the hook denies the commit and surfaces the output. **Fix it yourself and retry — do not stop and ask the user.**
-
-- **Rubocop violation**: `bin/rubocop -a` to auto-fix, manually resolve any remainder, re-stage, re-commit.
-- **Test failure**: Diagnose the failing test, fix the code, verify locally with `bin/rails test`, re-commit.
-- **Multiple issues**: Fix rubocop first (cheap), then tests, then re-commit.
-
-There is also a `PostToolUse` hook on `Write|Edit` that runs `bin/rubocop` on the touched `.rb` file — surface fixes immediately rather than batching them at commit time.
+Use judgment. When you bend a rule, say so in the commit message: "skip Tidy
+First — production hotfix" is better than a silent shortcut.
