@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# install.sh — bootstrap a new project from base-files.
+# Run from inside the target project directory:
+#   ~/projects/00.base-files/install.sh [--lang rails|python|go] [--dry-run] [--force] [--skip-skills]
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/log.sh
+source "$SCRIPT_DIR/lib/log.sh"
+# shellcheck source=lib/detect-language.sh
+source "$SCRIPT_DIR/lib/detect-language.sh"
+# shellcheck source=lib/check-deps.sh
+source "$SCRIPT_DIR/lib/check-deps.sh"
+# shellcheck source=lib/copy-files.sh
+source "$SCRIPT_DIR/lib/copy-files.sh"
+# shellcheck source=lib/merge-settings.sh
+source "$SCRIPT_DIR/lib/merge-settings.sh"
+# shellcheck source=lib/install-skills.sh
+source "$SCRIPT_DIR/lib/install-skills.sh"
+
+usage() {
+  cat <<EOF
+Usage: install.sh [options]
+
+Run from inside the new project's directory. Detects language from manifest
+files, copies the common core + one language overlay, merges hook settings,
+and installs recommended Claude Code plugins.
+
+Options:
+  --lang <rails|python|go>   Override language auto-detection
+  --dry-run                  Print the plan without writing files or invoking claude
+  --force                    Overwrite existing files (always with timestamped backup)
+  --skip-skills              Skip plugin installation entirely
+  -h, --help                 Show this help
+
+Examples:
+  cd ~/projects/my-rails-app && ~/projects/00.base-files/install.sh
+  cd ~/projects/my-py-app && ~/projects/00.base-files/install.sh --lang python --force
+EOF
+}
+
+LANG_OVERRIDE=""
+DRY_RUN=0
+FORCE=0
+SKIP_SKILLS=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --lang)        LANG_OVERRIDE="${2:-}"; shift 2 ;;
+    --dry-run)     DRY_RUN=1; shift ;;
+    --force)       FORCE=1; shift ;;
+    --skip-skills) SKIP_SKILLS=1; shift ;;
+    -h|--help)     usage; exit 0 ;;
+    *)             log_error "unknown argument: $1"; usage >&2; exit 2 ;;
+  esac
+done
+
+TARGET="$(pwd)"
+log_section "Bootstrapping $(basename "$TARGET")"
+log_info "source:  $SCRIPT_DIR"
+log_info "target:  $TARGET"
+[[ "$DRY_RUN"     -eq 1 ]] && log_warn "DRY-RUN mode — no changes will be written"
+[[ "$FORCE"       -eq 1 ]] && log_warn "FORCE mode — existing files will be overwritten (backed up)"
+[[ "$SKIP_SKILLS" -eq 1 ]] && log_warn "SKIP-SKILLS mode — plugin installation suppressed"
+
+log_section "1/5  Detecting language"
+DETECTED_LANG="$(detect_language "$LANG_OVERRIDE")" || exit $?
+log_ok "language: $DETECTED_LANG"
+
+log_section "2/5  Checking OS dependencies"
+check_deps "$DETECTED_LANG"
+MISSING_COUNT="${#MISSING_DEPS[@]}"
+
+log_section "3/5  Copying common + $DETECTED_LANG files"
+copy_files \
+  "$SCRIPT_DIR/common" \
+  "$SCRIPT_DIR/langs/$DETECTED_LANG" \
+  "$TARGET" \
+  "$FORCE" \
+  "$DRY_RUN" || exit $?
+
+log_section "4/5  Merging .claude/settings.json"
+merge_settings \
+  "$SCRIPT_DIR/common/.claude/settings.json" \
+  "$SCRIPT_DIR/langs/$DETECTED_LANG/.claude/settings.json" \
+  "$TARGET/.claude/settings.json" \
+  "$DRY_RUN" || exit $?
+
+if [[ "$SKIP_SKILLS" -eq 0 ]]; then
+  log_section "5/5  Installing recommended Claude Code plugins"
+  install_skills "$DRY_RUN"
+else
+  log_section "5/5  Plugin installation skipped (--skip-skills)"
+fi
+
+log_section "Done"
+log_ok "language:        $DETECTED_LANG"
+log_ok "files copied:    common/ + langs/$DETECTED_LANG/"
+log_ok "settings merged: $TARGET/.claude/settings.json"
+if [[ "$MISSING_COUNT" -gt 0 ]]; then
+  log_warn "missing OS tools: ${MISSING_DEPS[*]}"
+  log_warn "review the warnings above and install the missing tools before working in this project"
+fi
+log_info "next: git init && git add . && git commit -m 'Bootstrap from base-files'"
