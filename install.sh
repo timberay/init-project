@@ -68,7 +68,7 @@ DETECTED_LANG="$(detect_language "$LANG_OVERRIDE")" || exit $?
 log_ok "language: $DETECTED_LANG"
 
 log_section "2/5  Checking OS dependencies"
-check_deps "$DETECTED_LANG"
+check_deps "$DETECTED_LANG" || exit $?
 MISSING_COUNT="${#MISSING_DEPS[@]}"
 
 log_section "3/5  Copying common + $DETECTED_LANG files"
