@@ -87,4 +87,69 @@ set -e
 [[ -z "$out" ]] || fail "userpromptsubmit: malformed JSON should be silent, got: $out"
 ok "userpromptsubmit: silent + exit 0 on malformed JSON"
 
+# --- pretooluse-stale-check.sh ---
+
+PT="$ROOT/common/.claude/hooks/pretooluse-stale-check.sh"
+
+# Case 1: non-target tool (e.g. Read) → silent
+out="$(echo '{"tool_name":"Read"}' | bash "$PT" 2>&1)"
+[[ -z "$out" ]] || fail "pretooluse: should be silent for Read, got: $out"
+ok "pretooluse: silent for non-target tool"
+
+# Case 2: target tool, no PROJECT_STATE.md → stderr warning, exit 0
+TMP="$(mktemp -d)"
+err="$(cd "$TMP" && echo '{"tool_name":"Edit"}' | bash "$PT" 2>&1 >/dev/null)"
+echo "$err" | grep -q "missing" \
+  || fail "pretooluse: missing-file warning not emitted (got: $err)"
+rm -rf "$TMP"
+ok "pretooluse: warns when PROJECT_STATE.md missing"
+
+# Case 3: target tool, fresh PROJECT_STATE.md → silent
+TMP="$(mktemp -d)"
+touch "$TMP/PROJECT_STATE.md"
+out="$(cd "$TMP" && echo '{"tool_name":"Edit"}' | bash "$PT" 2>&1)"
+[[ -z "$out" ]] || fail "pretooluse: should be silent on fresh STATE, got: $out"
+rm -rf "$TMP"
+ok "pretooluse: silent on fresh PROJECT_STATE.md"
+
+# Cross-platform helper for setting mtime N days in the past
+back_date_file() {
+  local file="$1" days="$2"
+  if touch -d "${days} days ago" "$file" 2>/dev/null; then
+    return 0
+  fi
+  # BSD fallback (macOS)
+  local stamp
+  stamp="$(date -v-${days}d +%Y%m%d%H%M 2>/dev/null || date -d "${days} days ago" +%Y%m%d%H%M)"
+  touch -t "$stamp" "$file"
+}
+
+# Case 4: target tool, stale PROJECT_STATE.md (>7 days) → warning
+TMP="$(mktemp -d)"
+touch "$TMP/PROJECT_STATE.md"
+back_date_file "$TMP/PROJECT_STATE.md" 10
+err="$(cd "$TMP" && echo '{"tool_name":"Edit"}' | bash "$PT" 2>&1 >/dev/null)"
+echo "$err" | grep -qE 'stale|days' \
+  || fail "pretooluse: stale warning not emitted (got: $err)"
+rm -rf "$TMP"
+ok "pretooluse: warns when PROJECT_STATE.md is >7 days stale"
+
+# Case 5: STATE_STALE_DAYS=1 override → warns on 2-day-old file
+TMP="$(mktemp -d)"
+touch "$TMP/PROJECT_STATE.md"
+back_date_file "$TMP/PROJECT_STATE.md" 2
+err="$(cd "$TMP" && echo '{"tool_name":"Write"}' | STATE_STALE_DAYS=1 bash "$PT" 2>&1 >/dev/null)"
+echo "$err" | grep -q "stale" \
+  || fail "pretooluse: STATE_STALE_DAYS env override not respected (got: $err)"
+rm -rf "$TMP"
+ok "pretooluse: STATE_STALE_DAYS override works"
+
+# Case 6: target tool, no PROJECT_STATE.md, exit code must be 0 (warn but not block)
+TMP_EXIT="$(mktemp -d)"
+( cd "$TMP_EXIT" && echo '{"tool_name":"Edit"}' | bash "$PT" 2>/dev/null )
+rc=$?
+rm -rf "$TMP_EXIT"
+[[ "$rc" -eq 0 ]] || fail "pretooluse: must exit 0 even when warning (got rc=$rc)"
+ok "pretooluse: exits 0 even when warning (never blocks)"
+
 echo "test_orchestrator_hooks.sh: ALL PASS"
