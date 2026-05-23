@@ -12,6 +12,34 @@ code in this repository.
   changes (new logic) in a single commit
 - **Small Commits**: Commit every time a test passes or a refactoring is done
 
+## Orchestrator (STATE + ADR)
+
+Two files are required reading at the start of every session — the SessionStart
+hook (`.claude/hooks/sessionstart-inject-state.sh`) already injects them, but
+verify you have read them:
+
+- **`PROJECT_STATE.md`** — "where the project is right now". Current phase,
+  active spec/plan, locked decisions (as pointers), open questions, out-of-scope.
+  Hard cap: 100 lines. **Mutable** — refresh with `/state-sync` at phase
+  transitions and logical checkpoints.
+- **`docs/decisions/README.md` + `ADR-NNNN-*.md`** — append-only decision log.
+  `Accepted` ADRs are **immutable**. To reverse one, run `/supersede ADR-NNNN`
+  — never edit the body of an Accepted ADR.
+
+When the user references prior decisions ("이전에", "왜 X 했더라", "previously"),
+consult `docs/decisions/` before answering. The UserPromptSubmit hook will
+remind you. Decisions live in ADRs, not in git log.
+
+When code edits trigger the PreToolUse stale warning (PROJECT_STATE.md older
+than 7 days), run `/state-sync` to refresh before proceeding.
+
+Slash commands:
+- `/decide` — draft a new ADR from conversation context
+- `/state-sync` — refresh PROJECT_STATE.md
+- `/supersede ADR-NNNN` — reverse a previously accepted ADR
+
+See `docs/decisions/ADR-0000-orchestrator-bootstrap.md` for the rationale.
+
 ## Standards Reference
 
 Detailed standards are in `docs/standards/`. **Read the relevant document(s)

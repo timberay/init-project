@@ -238,7 +238,7 @@ every file into the target directory. Two safeties:
 
 ### Phase 4 — Merge settings.json
 
-`jq -s reduce` concatenates the `hooks.PreToolUse`,
+`jq -s reduce` concatenates the `hooks.SessionStart`, `hooks.PreToolUse`,
 `hooks.PostToolUse`, and `hooks.UserPromptSubmit` arrays from the common and
 language-specific `settings.json` files. The result is validated with
 `jq empty` before being atomically moved into place at
@@ -454,11 +454,22 @@ After a successful run, the target project contains:
 │       ├── REVIEW.md                  # Code-review checklist
 │       ├── STACK.md                   # Framework-specific tech stack (Rails / Python / Go)
 │       └── TOOLS.md                   # Framework-specific dev commands & linters
+├── PROJECT_STATE.md                  # Orchestrator state — "where the project is right now", refreshed via /state-sync
+├── docs/decisions/                   # Append-only ADR log (decisions live here, not in git log)
+│   ├── README.md                     # ADR index (one row per ADR)
+│   └── ADR-0000-orchestrator-bootstrap.md
 └── .claude/
-    ├── settings.json                  # Merged hook config: graphify reminder + pipeline reminder +
-    │                                  #   pre-commit (test runner + linter) + post-Write/Edit auto-format
+    ├── settings.json                  # Merged hook config: orchestrator (SessionStart inject + PreToolUse stale-check + UserPromptSubmit ADR reminder),
+    │                                  #   graphify reminder + pipeline reminder + pre-commit (test runner + linter) + post-Write/Edit auto-format
     ├── hooks/
-    │   └── pipeline-reminder.txt      # Context injected by the UserPromptSubmit hook
+    │   ├── pipeline-reminder.txt      # Context injected by the pipeline-phase UserPromptSubmit hook
+    │   ├── sessionstart-inject-state.sh   # Reads PROJECT_STATE.md + docs/decisions/README.md, injects as session context
+    │   ├── userpromptsubmit-remind.sh     # Reminds Claude to consult docs/decisions/ when the user references prior decisions
+    │   └── pretooluse-stale-check.sh      # Warns before Edit/Write/NotebookEdit if PROJECT_STATE.md is >7 days stale
+    ├── commands/
+    │   ├── decide.md                  # /decide — draft a new ADR from conversation context
+    │   ├── state-sync.md              # /state-sync — refresh PROJECT_STATE.md
+    │   └── supersede.md               # /supersede ADR-NNNN — reverse a previously accepted ADR
     └── skills/
         └── push2gh/
             └── SKILL.md               # Project-bundled skill: commit → push → PR → cleanup
@@ -498,13 +509,34 @@ After a successful run, the target project contains:
   for tests, linters, type-checking, security scanning, migrations, and
   running the app.
 
-- **`.claude/settings.json`** is the merged hook config. The `UserPromptSubmit`
-  hook injects the pipeline reminder on feature-request keywords; the
-  `PreToolUse` hooks run the test suite and linter before `git commit`; the
-  `PostToolUse` hooks auto-format the file you just edited.
+- **`.claude/settings.json`** is the merged hook config. The `SessionStart`
+  hook injects `PROJECT_STATE.md` + the ADR index into the session's first
+  context. `UserPromptSubmit` hooks inject the pipeline reminder (on
+  feature-request keywords) and the ADR reminder (on prior-decision keywords).
+  The `PreToolUse` stale-check warns before Edit/Write if PROJECT_STATE.md is
+  >7 days old; other `PreToolUse` hooks run the test suite and linter before
+  `git commit`; `PostToolUse` hooks auto-format the file you just edited.
 
 - **`.claude/hooks/pipeline-reminder.txt`** is the context message the
-  `UserPromptSubmit` hook injects when triggered.
+  pipeline-phase `UserPromptSubmit` hook injects when triggered.
+
+- **`.claude/hooks/sessionstart-inject-state.sh`**,
+  **`userpromptsubmit-remind.sh`**, **`pretooluse-stale-check.sh`** are the
+  three orchestrator hook scripts. See
+  `docs/decisions/ADR-0000-orchestrator-bootstrap.md` for the rationale.
+
+- **`.claude/commands/{decide,state-sync,supersede}.md`** are the three
+  orchestrator slash commands. `/decide` drafts a new ADR; `/state-sync`
+  refreshes `PROJECT_STATE.md`; `/supersede ADR-NNNN` reverses a previously
+  accepted ADR.
+
+- **`PROJECT_STATE.md`** is the project's "where are we right now" page —
+  one screen, six fixed sections, mutable. The `SessionStart` hook injects
+  it on every session. Refresh with `/state-sync` at phase transitions.
+
+- **`docs/decisions/`** is the append-only ADR directory. Decisions are
+  immutable once `Accepted`; reversal requires `/supersede`. See
+  `ADR-0000-orchestrator-bootstrap.md` for the system itself.
 
 ### What does NOT get installed
 

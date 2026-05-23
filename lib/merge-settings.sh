@@ -1,6 +1,6 @@
 # lib/merge-settings.sh — deep-merge two Claude Code settings.json files.
 # Usage (sourced): merge_settings <common.json> <lang.json> <target.json> <dry:0|1>
-# Concatenates arrays under .hooks.PreToolUse / PostToolUse / UserPromptSubmit.
+# Concatenates arrays under .hooks.SessionStart / PreToolUse / PostToolUse / UserPromptSubmit.
 # Validates the result with `jq empty`. Atomic write on success.
 
 merge_settings() {
@@ -18,6 +18,7 @@ merge_settings() {
   if ! jq -s '
     reduce .[] as $x (
       {hooks:{}};
+      .hooks.SessionStart     = ((.hooks.SessionStart     // []) + ($x.hooks.SessionStart     // [])) |
       .hooks.PreToolUse       = ((.hooks.PreToolUse       // []) + ($x.hooks.PreToolUse       // [])) |
       .hooks.PostToolUse      = ((.hooks.PostToolUse      // []) + ($x.hooks.PostToolUse      // [])) |
       .hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + ($x.hooks.UserPromptSubmit // []))
