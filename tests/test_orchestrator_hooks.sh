@@ -68,4 +68,23 @@ out="$(echo '{}' | bash "$UP")"
 [[ -z "$out" ]] || fail "userpromptsubmit: should be silent on empty prompt, got: $out"
 ok "userpromptsubmit: silent on empty payload"
 
+# Case 5: bare "earlier" without decision context → silent (false positive guard)
+out="$(echo '{"prompt":"I updated this function earlier today, is it correct?"}' | bash "$UP")"
+[[ -z "$out" ]] || fail "userpromptsubmit: bare 'earlier' should not trigger, got: $out"
+ok "userpromptsubmit: silent on bare 'earlier' without decision context"
+
+# Case 6: bare "previously" without decision context → silent
+out="$(echo '{"prompt":"I previously wrote this code but now want to refactor it"}' | bash "$UP")"
+[[ -z "$out" ]] || fail "userpromptsubmit: bare 'previously' should not trigger, got: $out"
+ok "userpromptsubmit: silent on bare 'previously' without decision context"
+
+# Case 7: malformed JSON → silent, exit 0 (not a blocking error)
+set +e
+out="$(printf 'not json at all' | bash "$UP" 2>/dev/null)"
+rc=$?
+set -e
+[[ "$rc" -eq 0 ]] || fail "userpromptsubmit: malformed JSON should exit 0, got rc=$rc"
+[[ -z "$out" ]] || fail "userpromptsubmit: malformed JSON should be silent, got: $out"
+ok "userpromptsubmit: silent + exit 0 on malformed JSON"
+
 echo "test_orchestrator_hooks.sh: ALL PASS"
