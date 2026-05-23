@@ -68,4 +68,26 @@ set -e
 [[ "$rc" -ne 0 ]] || fail "missing input should fail (got rc=$rc)"
 ok "missing input fails"
 
+# --- New: SessionStart arrays should concatenate ---
+TMP_SS="$(mktemp -d)"
+trap 'rm -rf "$TMP" "$TMP_SS"' EXIT
+
+cat >"$TMP_SS/common.json" <<'EOF'
+{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"echo common"}]}]}}
+EOF
+cat >"$TMP_SS/lang.json" <<'EOF'
+{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"echo lang"}]}]}}
+EOF
+
+merge_settings "$TMP_SS/common.json" "$TMP_SS/lang.json" "$TMP_SS/out.json" 0 \
+  || fail "merge_settings failed for SessionStart"
+
+count=$(jq '.hooks.SessionStart | length' "$TMP_SS/out.json")
+[[ "$count" -eq 2 ]] || fail "SessionStart merge: expected 2 entries, got $count"
+jq -e '.hooks.SessionStart[0].hooks[0].command == "echo common"' "$TMP_SS/out.json" >/dev/null \
+  || fail "SessionStart merge: first entry not common"
+jq -e '.hooks.SessionStart[1].hooks[0].command == "echo lang"' "$TMP_SS/out.json" >/dev/null \
+  || fail "SessionStart merge: second entry not lang"
+ok "merge_settings concatenates SessionStart"
+
 echo "test_merge_settings.sh: ALL PASS"
