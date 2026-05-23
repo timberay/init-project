@@ -61,3 +61,21 @@ a manual README/CHANGELOG sync respectively).
 - If the user explicitly continues an in-progress phase (e.g., "Phase 3 계속", "플랜 수정", 이미 열려있는 design doc 편집), proceed without re-checking earlier phases.
 - If the user explicitly overrides ("간단한 버그 수정이니 phase 건너뛰어"), confirm the task truly doesn't need the pipeline, then proceed.
 - For bug fixes, refactors, and small tweaks, the pipeline does not apply. Use your judgment.
+
+## Orchestrator hooks per phase
+
+The Orchestrator mechanism (see `CLAUDE.md → Orchestrator (STATE + ADR)` and
+`docs/decisions/ADR-0000-orchestrator-bootstrap.md`) integrates with the
+six-phase pipeline at these points:
+
+| Phase | Orchestrator action |
+|---|---|
+| 1 (Product) | On completion: `/decide` to capture WHAT/WHY as an ADR. The Phase 1 design doc itself stays under `~/.gstack/`, but the decision is preserved in-repo. |
+| 2 (Architecture) | On completion: `/decide` for each major architectural choice (data flow, module boundaries, technology selection). |
+| 3 (Technical Design) | Record the spec path in PROJECT_STATE.md "Current Phase / Active Spec" via `/state-sync` after writing the spec. |
+| 4 (Task Breakdown) | Record the plan path in PROJECT_STATE.md "Current Phase / Active Plan" via `/state-sync`. |
+| 5 (Execute) | `/state-sync` at logical checkpoints — not per task (too noisy), but when a substantial block of tasks lands. |
+| 6 (Ship) | After merge: `/state-sync` to clear the shipped item from "Active Work". If the shipped work locked any new technical choices, run `/decide` to capture them. |
+
+These are conventions, not blocking gates. Skip them only when the entire
+pipeline is being skipped (bug fixes, refactors, tweaks).
