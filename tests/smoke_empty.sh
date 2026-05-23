@@ -38,6 +38,10 @@ ok "push2gh skill bundled"
 [[ -f "$TMP/.claude/commands/supersede.md" ]] || fail "/supersede command not installed"
 jq -e '.hooks.SessionStart | length >= 1' "$TMP/.claude/settings.json" >/dev/null \
   || fail "SessionStart hook not registered in merged settings.json"
+jq -e '.hooks.UserPromptSubmit | map(.hooks[].command) | flatten | any(test("userpromptsubmit-remind.sh"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "userpromptsubmit-remind.sh not registered in merged UserPromptSubmit"
+jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("pretooluse-stale-check.sh"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "pretooluse-stale-check.sh not registered in merged PreToolUse"
 ok "orchestrator files bundled"
 ok "--lang override works in empty dir"
 
