@@ -45,7 +45,7 @@ _copy_one() {
     log_action "(dry-run) would copy $src -> $dst"
   else
     mkdir -p "$(dirname "$dst")"
-    cp "$src" "$dst"
+    cp -p "$src" "$dst"
     log_ok "copied $src -> $dst"
   fi
 }

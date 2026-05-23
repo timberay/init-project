@@ -22,6 +22,20 @@ jq -e '.hooks.PostToolUse[0].hooks[0].command | contains("gofmt")' "$TMP/.claude
 [[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
 head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
 ok "push2gh skill bundled"
+
+# Orchestrator: STATE + ADR + hooks + commands must land
+[[ -f "$TMP/PROJECT_STATE.md" ]] || fail "PROJECT_STATE.md not installed"
+[[ -f "$TMP/docs/decisions/README.md" ]] || fail "ADR index not installed"
+[[ -f "$TMP/docs/decisions/ADR-0000-orchestrator-bootstrap.md" ]] || fail "ADR-0000 not installed"
+[[ -x "$TMP/.claude/hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
+[[ -x "$TMP/.claude/hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
+[[ -x "$TMP/.claude/hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
+[[ -f "$TMP/.claude/commands/decide.md" ]] || fail "/decide command not installed"
+[[ -f "$TMP/.claude/commands/state-sync.md" ]] || fail "/state-sync command not installed"
+[[ -f "$TMP/.claude/commands/supersede.md" ]] || fail "/supersede command not installed"
+jq -e '.hooks.SessionStart | length >= 1' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "SessionStart hook not registered in merged settings.json"
+ok "orchestrator files bundled"
 ok "real run installs go overlay"
 
 echo "smoke_go.sh: ALL PASS"
