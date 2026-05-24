@@ -51,4 +51,8 @@ head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is no
 grep -qE "^\*\.exe" "$TMP/.gitignore" || fail "Go .gitignore missing *.exe"
 ok "Go .gitignore bundled"
 
+! jq -e '.hooks.PreToolUse[] | select(.matcher | tostring | contains("Bash"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
+ok "ADR-0001: no PreToolUse Bash gate present"
+
 echo "smoke_go.sh: ALL PASS"
