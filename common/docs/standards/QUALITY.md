@@ -130,18 +130,29 @@ autonomously — if you did not record it, it does not exist for you.
 
 For diagnosis workflow, follow the `systematic-debugging` skill.
 
+## Quality Gate Layering
+
+This project enforces quality at four distinct layers. Each layer answers a different question and has a different owner.
+
+| Layer | When | Owner | Strength |
+|---|---|---|---|
+| Edit-time format/lint | On file save inside Claude Code | `.claude/settings.json` PostToolUse | Auto-fix, no block |
+| Commit-time fast checks | On `git commit` (any tool) | `.pre-commit-config.yaml` (run via the installed git hook) | Block on violation |
+| CI fast + slow checks | On PR / push to `main` | `.github/workflows/ci.yml` | Block merge |
+| Orchestrator hooks (unrelated) | Session start, prompt submit, stale state | `.claude/hooks/*.sh` | Soft inject / warn |
+
+The single source of truth for fast checks is `.pre-commit-config.yaml`. CI re-runs `pre-commit run --all-files` and adds the test suite. Locally, `pre-commit install` (one-time, after `git init`) registers the git hook so every `git commit` runs the same yaml.
+
+This layered design is locked by ADR-0001. See `docs/decisions/ADR-0001-quality-gates-owned-by-precommit.md` for the rationale.
+
 ## Pre-commit Failure Recovery
 
-This project enforces commit gates via Claude Code `PreToolUse` hooks
-(`.claude/settings.json`). The exact commands are language-specific — see
-`TOOLS.md`. The recovery workflow is universal:
+The recovery workflow is universal across layers:
 
-- **Linter violations**: run the auto-fix command, manually resolve the rest,
-  re-stage, retry the commit.
-- **Test failure**: diagnose the failing test, fix the code, verify locally
-  with the test command, retry the commit.
-- **Multiple issues**: fix lint first (cheap), then tests, then retry.
-- **Never** bypass with `--no-verify` to escape a failing hook. If a hook is
-  wrong, fix the hook in a separate commit.
+- **Linter/formatter violations**: run the auto-fix command (`ruff check --fix`, `gofmt -w`, `bin/rubocop -a`), manually resolve the rest, re-stage, retry the commit.
+- **Test failure (CI)**: diagnose the failing test locally, fix the code, verify with the local test command, push.
+- **Multiple issues**: fix lint first (cheap, often auto-fixable), then tests, then retry.
+- **Never** bypass with `git commit --no-verify`. If a hook is wrong, fix the hook in a separate commit.
+- **First-time setup on a fresh clone**: `pre-commit install` registers the git hook. Without this, the local commit-time gate does not run (CI still does).
 
-For the code-review checklist that gates merging, see `REVIEW.md`.
+For the code-review checklist that gates merging, see `REVIEW.md`. For the exact linter and test commands, see the language overlay's `TOOLS.md`.
