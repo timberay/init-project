@@ -108,4 +108,3 @@ rails credentials:edit --environment production
 
 - Never commit sensitive information to `.env`
 - Use Rails credentials for API keys, OAuth client secrets, and any production credentials
-
