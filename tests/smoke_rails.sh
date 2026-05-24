@@ -52,4 +52,9 @@ ok "real run installs rails overlay"
 grep -q "^root = true" "$TMP/.editorconfig" || fail ".editorconfig missing 'root = true'"
 ok ".editorconfig bundled"
 
+[[ -f "$TMP/.gitignore" ]] || fail "Rails .gitignore not installed"
+head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is not the github/gitignore-sourced overlay"
+grep -qE "^/log/\*" "$TMP/.gitignore" || fail "Rails .gitignore missing /log/*"
+ok "Rails .gitignore bundled"
+
 echo "smoke_rails.sh: ALL PASS"
