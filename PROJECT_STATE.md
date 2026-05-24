@@ -1,26 +1,25 @@
 # PROJECT_STATE
 
-> Last Updated: 2026-05-23 by tonny (session: orchestrator-bootstrap)
+> Last Updated: 2026-05-24T15:48:32+09:00 by Tonny Donghwi Kim (session: adr-0001-shipped)
 
 ## Current Phase
-- Phase: 6 — Ship (orchestrator feature)
-- Active Spec: `docs/superpowers/specs/2026-05-23-orchestrator-design.md`
-- Active Plan: `docs/superpowers/plans/2026-05-23-orchestrator.md`
+(none — between cycles; orchestrator and bootstrap-completeness migrations both shipped)
 
 ## Locked Decisions
 See `docs/decisions/README.md` for the full index.
 
 - ADR-0000 — Adopt PROJECT_STATE + ADR + Hooks orchestrator (Accepted, 2026-05-23)
+- ADR-0001 — Quality gates owned by pre-commit + CI (Accepted, 2026-05-24)
 
 ## Active Work
-- [in-progress] Self-apply orchestrator to init-project (this PR)
+(none)
 
 ## Open Questions
 (none)
 
 ## Out of Scope
 - Multi-team approval workflows
-- Pre-commit hard blocks (Medium-strength enforcement only)
+- Hard pre-commit blocks for orchestrator immutability (quality-gate pre-commit per ADR-0001 is a different layer)
 - Bringing Phase 1 / Phase 2 raw outputs in-repo (only decisions extracted to ADRs)
 
 ## Last Updated
