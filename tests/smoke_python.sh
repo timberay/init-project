@@ -47,4 +47,10 @@ ok "real run installs python overlay"
 grep -q "^root = true" "$TMP/.editorconfig" || fail ".editorconfig missing 'root = true'"
 ok ".editorconfig bundled"
 
+[[ -f "$TMP/.gitignore" ]] || fail "Python .gitignore not installed"
+grep -q "^__pycache__/" "$TMP/.gitignore" || fail "Python .gitignore missing __pycache__"
+grep -q "^\.venv" "$TMP/.gitignore" || fail "Python .gitignore missing .venv"
+head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is not the github/gitignore-sourced overlay"
+ok "Python .gitignore bundled"
+
 echo "smoke_python.sh: ALL PASS"
