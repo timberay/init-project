@@ -43,4 +43,28 @@ jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("pretoolus
 ok "orchestrator files bundled"
 ok "real run installs python overlay"
 
+[[ -f "$TMP/.editorconfig" ]] || fail ".editorconfig not installed"
+grep -q "^root = true" "$TMP/.editorconfig" || fail ".editorconfig missing 'root = true'"
+ok ".editorconfig bundled"
+
+[[ -f "$TMP/.gitignore" ]] || fail "Python .gitignore not installed"
+grep -q "^__pycache__/" "$TMP/.gitignore" || fail "Python .gitignore missing __pycache__"
+grep -q "^\.venv" "$TMP/.gitignore" || fail "Python .gitignore missing .venv"
+head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is not the github/gitignore-sourced overlay"
+ok "Python .gitignore bundled"
+
+# ADR-0001: Bash(git commit*) gates moved to pre-commit/CI; no Bash matcher should remain
+! jq -e '.hooks.PreToolUse[] | select(.matcher | tostring | contains("Bash"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
+ok "ADR-0001: no PreToolUse Bash gate present"
+
+[[ -f "$TMP/.pre-commit-config.yaml" ]] || fail ".pre-commit-config.yaml not installed"
+[[ -f "$TMP/.github/workflows/ci.yml" ]] || fail "ci.yml not installed"
+ok ".pre-commit-config.yaml + ci.yml bundled"
+
+# ADR-0001: empty-project bootstrap commit must succeed (this was the bug that motivated the migration)
+( cd "$TMP" && git init -q && git add . && git -c user.email=test@test -c user.name=test commit -q -m "Bootstrap from base-files" ) \
+  || fail "empty-project bootstrap commit failed (ADR-0001 regression)"
+ok "empty-project bootstrap commit exits 0"
+
 echo "smoke_python.sh: ALL PASS"

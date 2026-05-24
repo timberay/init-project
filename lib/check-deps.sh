@@ -5,7 +5,7 @@
 # Override-able lists. Defaults are sensible; tests can override before calling.
 : "${REQUIRED_OS:=}"
 if [[ -z "${REQUIRED_OS:-}" ]]; then
-  REQUIRED_OS=(jq git)
+  REQUIRED_OS=(jq git pre-commit)
 fi
 
 : "${REQUIRED_LANG_rails:=}"; [[ -z "${REQUIRED_LANG_rails:-}" ]] && REQUIRED_LANG_rails=(ruby)
@@ -20,7 +20,8 @@ _install_hint() {
     ruby)    echo "brew install rbenv && rbenv install 3.3.0  # or use system package" ;;
     python3) echo "brew install pyenv && pyenv install 3.12   # or use system package" ;;
     go)      echo "brew install go               # or use system package" ;;
-    claude)  echo "see https://docs.claude.com/claude-code for the install script" ;;
+    claude)     echo "see https://docs.claude.com/claude-code for the install script" ;;
+    pre-commit) echo "pipx install pre-commit          # or: uv tool install pre-commit" ;;
     *)       echo "install '$1' via your package manager" ;;
   esac
 }

@@ -18,3 +18,4 @@ Append-only log. Each ADR captures one decision: what was decided, why, and the 
 | # | Title | Status | Date |
 |---|-------|--------|------|
 | 0000 | Adopt PROJECT_STATE + ADR + Hooks orchestrator | Accepted | 2026-05-23 |
+| 0001 | Quality gates owned by pre-commit + CI | Accepted | 2026-05-24 |

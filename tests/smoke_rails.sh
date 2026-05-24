@@ -23,8 +23,8 @@ ok "dry-run detects rails and writes nothing"
 [[ -f "$TMP/CLAUDE.md" ]] || fail "CLAUDE.md missing after install"
 [[ -f "$TMP/docs/standards/STACK.md" ]] || fail "Rails STACK.md missing"
 grep -q "Rails" "$TMP/docs/standards/STACK.md" || fail "STACK.md does not look like the Rails overlay"
-jq -e '.hooks.PreToolUse | length >= 2' "$TMP/.claude/settings.json" >/dev/null \
-  || fail "merged settings.json should have at least 2 PreToolUse entries"
+jq -e '.hooks.PreToolUse | length >= 1' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "merged settings.json should have at least 1 PreToolUse entry (orchestrator stale-check)"
 [[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
 head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
 ok "push2gh skill bundled"
@@ -47,5 +47,27 @@ jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("pretoolus
   || fail "pretooluse-stale-check.sh not registered in merged PreToolUse"
 ok "orchestrator files bundled"
 ok "real run installs rails overlay"
+
+[[ -f "$TMP/.editorconfig" ]] || fail ".editorconfig not installed"
+grep -q "^root = true" "$TMP/.editorconfig" || fail ".editorconfig missing 'root = true'"
+ok ".editorconfig bundled"
+
+[[ -f "$TMP/.gitignore" ]] || fail "Rails .gitignore not installed"
+head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is not the github/gitignore-sourced overlay"
+grep -qE "^/log/\*" "$TMP/.gitignore" || fail "Rails .gitignore missing /log/*"
+ok "Rails .gitignore bundled"
+
+! jq -e '.hooks.PreToolUse[] | select(.matcher | tostring | contains("Bash"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
+ok "ADR-0001: no PreToolUse Bash gate present"
+
+[[ -f "$TMP/.pre-commit-config.yaml" ]] || fail ".pre-commit-config.yaml not installed"
+[[ -f "$TMP/.github/workflows/ci.yml" ]] || fail "ci.yml not installed"
+ok ".pre-commit-config.yaml + ci.yml bundled"
+
+# ADR-0001: empty-project bootstrap commit must succeed (this was the bug that motivated the migration)
+( cd "$TMP" && git init -q && git add . && git -c user.email=test@test -c user.name=test commit -q -m "Bootstrap from base-files" ) \
+  || fail "empty-project bootstrap commit failed (ADR-0001 regression)"
+ok "empty-project bootstrap commit exits 0"
 
 echo "smoke_rails.sh: ALL PASS"

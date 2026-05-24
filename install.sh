@@ -102,3 +102,4 @@ if [[ "$MISSING_COUNT" -gt 0 ]]; then
   log_warn "review the warnings above and install the missing tools before working in this project"
 fi
 log_info "next: git init && git add . && git commit -m 'Bootstrap from base-files'"
+log_info "      then: pre-commit install   # registers the git hook (one-time)"
