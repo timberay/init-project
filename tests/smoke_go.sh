@@ -46,4 +46,9 @@ ok "real run installs go overlay"
 grep -q "^root = true" "$TMP/.editorconfig" || fail ".editorconfig missing 'root = true'"
 ok ".editorconfig bundled"
 
+[[ -f "$TMP/.gitignore" ]] || fail "Go .gitignore not installed"
+head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is not the github/gitignore-sourced overlay"
+grep -qE "^\*\.exe" "$TMP/.gitignore" || fail "Go .gitignore missing *.exe"
+ok "Go .gitignore bundled"
+
 echo "smoke_go.sh: ALL PASS"
