@@ -1,0 +1,26 @@
+# Single source of truth for fast quality checks at git commit time.
+# Tests run in CI (see .github/workflows/ci.yml). Refresh hook versions with:
+#   pre-commit autoupdate
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: ['--fix']
+      - id: ruff-format
