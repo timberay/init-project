@@ -61,4 +61,13 @@ ok "Rails .gitignore bundled"
   || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
 ok "ADR-0001: no PreToolUse Bash gate present"
 
+[[ -f "$TMP/.pre-commit-config.yaml" ]] || fail ".pre-commit-config.yaml not installed"
+[[ -f "$TMP/.github/workflows/ci.yml" ]] || fail "ci.yml not installed"
+ok ".pre-commit-config.yaml + ci.yml bundled"
+
+# ADR-0001: empty-project bootstrap commit must succeed (this was the bug that motivated the migration)
+( cd "$TMP" && git init -q && git add . && git -c user.email=test@test -c user.name=test commit -q -m "Bootstrap from base-files" ) \
+  || fail "empty-project bootstrap commit failed (ADR-0001 regression)"
+ok "empty-project bootstrap commit exits 0"
+
 echo "smoke_rails.sh: ALL PASS"
