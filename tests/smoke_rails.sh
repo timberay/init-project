@@ -48,4 +48,8 @@ jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("pretoolus
 ok "orchestrator files bundled"
 ok "real run installs rails overlay"
 
+[[ -f "$TMP/.editorconfig" ]] || fail ".editorconfig not installed"
+grep -q "^root = true" "$TMP/.editorconfig" || fail ".editorconfig missing 'root = true'"
+ok ".editorconfig bundled"
+
 echo "smoke_rails.sh: ALL PASS"
