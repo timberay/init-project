@@ -53,4 +53,9 @@ grep -q "^\.venv" "$TMP/.gitignore" || fail "Python .gitignore missing .venv"
 head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is not the github/gitignore-sourced overlay"
 ok "Python .gitignore bundled"
 
+# ADR-0001: Bash(git commit*) gates moved to pre-commit/CI; no Bash matcher should remain
+! jq -e '.hooks.PreToolUse[] | select(.matcher | tostring | contains("Bash"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
+ok "ADR-0001: no PreToolUse Bash gate present"
+
 echo "smoke_python.sh: ALL PASS"
