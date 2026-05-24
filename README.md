@@ -41,6 +41,12 @@ The installer:
 ```text
 <project>/
 ├── CLAUDE.md
+├── .editorconfig                        (common)
+├── .gitignore                           (language overlay)
+├── .pre-commit-config.yaml              (language overlay — commit-time fast checks, ADR-0001)
+├── .github/
+│   └── workflows/
+│       └── ci.yml                       (language overlay — CI: pre-commit + tests on PR / push to main)
 ├── docs/standards/
 │   ├── RULES.md       (common)
 │   ├── WORKFLOW.md    (common)
