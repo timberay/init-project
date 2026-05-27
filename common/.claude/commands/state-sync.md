@@ -81,27 +81,13 @@ When `--stage` is provided, run "Stage transition mode" (below) **after** Step 1
 
 Run this between Step 1 and Step 2, only when `--stage` was provided.
 
-1. **Compute current stage.** Re-read the `> Lifecycle Stage:` line captured in Step 1.
-   - If absent (warning already emitted), treat current stage as "unset". Ask the user to confirm explicitly that they want to set the initial label to `<Stage>` before continuing. This is *initial labeling*, not a transition — no obligations apply.
+1. **Compute current stage.** Re-read the `> Lifecycle Stage:` line captured in Step 1. If absent (warning already emitted), treat current stage as "unset" — ask the user to confirm setting the initial label to `<Stage>` before continuing. This is *initial labeling*, not a transition; no obligations apply.
 
-2. **Refuse illegal transitions.** Backward transitions are illegal via `--stage`, with one exception:
-   - `Archive → Pilot` is allowed but only via a **Reactivation ADR** (a new ADR, not `/supersede`). If the user has not yet produced one, pause and offer to run `/decide` first.
-   - Any other backward transition (e.g., `Launch → Pilot`, `Maintenance → Launch`, `Launch → Setup`) is refused. Print:
-     `Refusing backward transition <current> → <new>. Backward changes require a regression ADR (a new ADR that updates the stage slot), not /state-sync --stage. See docs/standards/LIFECYCLE.md "Edge cases".`
-   - Same-stage (`<current> == <new>`): refuse with `Already at <Stage>. No-op.`
+2. **Refuse non-forward transitions.** If `<new>` is not strictly forward of `<current>` in `Setup → Pilot → Launch → Maintenance → Archive`, print:
+   `Refusing <current> → <new>. Backward or same-stage transitions require a regression / reactivation ADR; see docs/standards/LIFECYCLE.md "Edge cases".`
+   Stop. Do not modify the file.
 
-3. **Surface forward-transition obligations.** For a legal forward transition, print the matching row from `docs/standards/LIFECYCLE.md` § Transition obligations:
-
-   <!-- Mirror of docs/standards/LIFECYCLE.md § Transition obligations. Keep in sync. -->
-   | Transition | Required artifacts |
-   |---|---|
-   | Setup → Pilot | `/state-sync` (header update). ADR optional. |
-   | Pilot → Launch | **`/decide` ADR required** + `/state-sync` + README updated for external audience. |
-   | Launch → Maintenance | **`/decide` ADR required** + `/state-sync`. |
-   | Maintenance → Archive | **`/decide` ADR required** + `/state-sync` + README marked "archived". |
-   | Forward skip (e.g., Pilot → Maintenance, Pilot → Archive) | Destination transition's required artifacts only. |
-
-   Ask the user to confirm the required artifacts are produced or in flight. If a required `/decide` ADR has not been written yet, **pause and offer to run `/decide` first** — do NOT silently proceed.
+3. **Surface forward-transition obligations.** Look up the matching row in `docs/standards/LIFECYCLE.md` § Transition obligations and print it back to the user. Ask them to confirm the required artifacts are produced or in flight. If a required `/decide` ADR has not been written yet, **pause and offer to run `/decide` first** — do NOT silently proceed.
 
 4. **Rewrite the header on confirmation.** Replace the `> Lifecycle Stage:` line with:
    ```
