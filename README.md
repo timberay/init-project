@@ -51,6 +51,7 @@ git add . && git commit -m "Bootstrap from base-files"
 That's it. Your new project now has `CLAUDE.md` guidance, language-specific
 linters, the PROJECT_STATE + ADR + Hooks orchestrator, pre-commit + CI
 quality gates ([ADR-0001](docs/decisions/ADR-0001-quality-gates-owned-by-precommit.md)),
+a `PROJECT_STATE.md` seeded to the `Setup` lifecycle stage ([ADR-0003](docs/decisions/ADR-0003-adopt-lifecycle-stages.md)),
 and the recommended Claude Code plugins.
 
 **Rails note ([ADR-0002](docs/decisions/ADR-0002-rails-rubocop-tolerant-of-missing-gem.md)):**
@@ -117,6 +118,7 @@ Common combinations:
 │       ├── WORKFLOW.md                    (common — six-phase pipeline)
 │       ├── QUALITY.md                     (common — testing / security principles)
 │       ├── REVIEW.md                      (common — code review checklist)
+│       ├── LIFECYCLE.md                   (common — project lifecycle stages)
 │       ├── STACK.md                       (language overlay — framework patterns)
 │       └── TOOLS.md                       (language overlay — lint / test / security commands)
 └── .claude/
