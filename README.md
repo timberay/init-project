@@ -242,3 +242,10 @@ E2E environment variables:
   ([ADR-0002](docs/decisions/ADR-0002-rails-rubocop-tolerant-of-missing-gem.md)).
 - **PROJECT_STATE drift warning at edit time** — `PROJECT_STATE.md` is more
   than 7 days old. Run `/state-sync` to refresh.
+- **`install.sh --force` reset the Lifecycle Stage to `Setup`** — `--force`
+  overwrites `PROJECT_STATE.md` with the template, re-seeding
+  `> Lifecycle Stage:` to `Setup (since <today>)`. The previous file is
+  preserved as `PROJECT_STATE.md.bak.YYYYMMDD-HHMMSS` in the same directory.
+  To recover the prior stage value, copy the `> Lifecycle Stage:` line
+  from the `.bak` file back into `PROJECT_STATE.md` and delete the backup
+  when satisfied.
