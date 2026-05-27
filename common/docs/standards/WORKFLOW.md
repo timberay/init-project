@@ -1,5 +1,7 @@
 # Development Workflow
 
+> **Scope:** `WORKFLOW.md` governs the lifecycle of **one feature** through the six-phase pipeline. For the **project-level** lifecycle stage (Setup → Pilot → Launch → Maintenance → Archive), see `LIFECYCLE.md`. The two axes are orthogonal — every stage can run features through Phases 1–6; the stage only modifies posture, not mechanics.
+
 ## Pipeline Phases
 
 New feature work flows through six phases: four design phases (1–4) that separate product, architecture, technical design, and task breakdown, followed by execution (5) and ship (6). Do NOT skip phases. A `UserPromptSubmit` hook reminds you when a feature request is detected.
