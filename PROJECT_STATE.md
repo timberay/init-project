@@ -1,5 +1,6 @@
 # PROJECT_STATE
 
+> Lifecycle Stage: Pilot (since 2026-05-23)
 > Last Updated: 2026-05-24T20:00:00+09:00 by Tonny Donghwi Kim (session: e2e-sandbox-shipped)
 
 ## Current Phase
