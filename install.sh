@@ -79,6 +79,18 @@ copy_files \
   "$FORCE" \
   "$DRY_RUN" || exit $?
 
+if [[ "$DRY_RUN" -ne 1 && -f "$TARGET/PROJECT_STATE.md" ]]; then
+  TODAY="$(date +%Y-%m-%d)"
+  # Seed only the literal placeholder, leave any real date alone.
+  if grep -q "Lifecycle Stage: Setup (since YYYY-MM-DD)" "$TARGET/PROJECT_STATE.md"; then
+    # Cross-platform sed-in-place: write to a temp file, then move.
+    sed "s/Lifecycle Stage: Setup (since YYYY-MM-DD)/Lifecycle Stage: Setup (since ${TODAY})/" \
+      "$TARGET/PROJECT_STATE.md" > "$TARGET/PROJECT_STATE.md.tmp" \
+      && mv "$TARGET/PROJECT_STATE.md.tmp" "$TARGET/PROJECT_STATE.md"
+    log_ok "seeded Lifecycle Stage date: ${TODAY}"
+  fi
+fi
+
 log_section "4/5  Merging .claude/settings.json"
 merge_settings \
   "$SCRIPT_DIR/common/.claude/settings.json" \
