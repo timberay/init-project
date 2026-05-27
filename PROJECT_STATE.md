@@ -1,11 +1,12 @@
 # PROJECT_STATE
 
 > Lifecycle Stage: Pilot (since 2026-05-23)
-> Last Updated: 2026-05-24T20:00:00+09:00 by Tonny Donghwi Kim (session: e2e-sandbox-shipped)
+> Last Updated: 2026-05-27T16:59:00+09:00 by Tonny Donghwi Kim (session: lifecycle-stages-shipped)
 
 ## Current Phase
-(none — between cycles; e2e sandbox suite shipped and the two regressions it
-caught were resolved by gitignore fix + ADR-0002)
+(none — between cycles; project lifecycle stages standard shipped:
+ADR-0003 + LIFECYCLE.md + PROJECT_STATE.md header slot + install.sh seed.
+`.antigravitycli/` now gitignored.)
 
 ## Locked Decisions
 See `docs/decisions/README.md` for the full index.
