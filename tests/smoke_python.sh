@@ -26,6 +26,10 @@ ok "push2gh skill bundled"
 
 # Orchestrator: STATE + ADR + hooks + commands must land
 [[ -f "$TMP/PROJECT_STATE.md" ]] || fail "PROJECT_STATE.md not installed"
+TODAY="$(date +%Y-%m-%d)"
+grep -q "^> Lifecycle Stage: Setup (since ${TODAY})$" "$TMP/PROJECT_STATE.md" \
+  || fail "PROJECT_STATE.md missing seeded 'Lifecycle Stage: Setup (since ${TODAY})' line"
+ok "PROJECT_STATE.md seeded with Lifecycle Stage line dated today"
 [[ -f "$TMP/docs/decisions/README.md" ]] || fail "ADR index not installed"
 [[ -f "$TMP/docs/decisions/ADR-0000-orchestrator-bootstrap.md" ]] || fail "ADR-0000 not installed"
 [[ -x "$TMP/.claude/hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
