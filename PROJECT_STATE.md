@@ -1,12 +1,14 @@
 # PROJECT_STATE
 
 > Lifecycle Stage: Pilot (since 2026-05-23)
-> Last Updated: 2026-05-27T16:59:00+09:00 by Tonny Donghwi Kim (session: lifecycle-stages-shipped)
+> Last Updated: 2026-05-27T19:03:56+09:00 by Tonny Donghwi Kim (session: lifecycle-followups-shipped)
 
 ## Current Phase
-(none — between cycles; project lifecycle stages standard shipped:
-ADR-0003 + LIFECYCLE.md + PROJECT_STATE.md header slot + install.sh seed.
-`.antigravitycli/` now gitignored.)
+(none — between cycles; lifecycle stages follow-ups shipped:
+smoke assertions across all language overlays, `/state-sync --stage` flow
+with canonical-label soft-validation, WORKFLOW/README cross-references to
+LIFECYCLE.md, `--force` reset behavior documented, and a simplification
+pass pointing `/state-sync` at LIFECYCLE.md as obligations source of truth.)
 
 ## Locked Decisions
 See `docs/decisions/README.md` for the full index.
