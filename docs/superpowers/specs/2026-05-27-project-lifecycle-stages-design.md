@@ -26,15 +26,21 @@ Consequence: `PROJECT_STATE.md` already tracks an *Active Work* slot (the curren
 
 ## Solution Overview
 
+All paths below are **template source paths** in this `init-project` repo. After `install.sh` bootstrap, the `common/` prefix is stripped — a deployed downstream project sees `CLAUDE.md`, `PROJECT_STATE.md`, `docs/standards/LIFECYCLE.md`, `docs/decisions/...` at its own root.
+
 ```
-<project>/
-├── PROJECT_STATE.md                    # header gains one line: "Lifecycle Stage: <Stage> (since YYYY-MM-DD)"
-├── docs/
-│   ├── standards/
-│   │   └── LIFECYCLE.md                # NEW — stage definitions, transition rules
-│   └── decisions/
-│       └── ADR-NNNN-*.md               # transitions Pilot→Launch, →Maintenance, →Archive each get an ADR
-└── common/CLAUDE.md                    # Standards Reference + Task→Required Reading rows extended
+init-project/                                       # template source (this repo)
+├── common/
+│   ├── CLAUDE.md                                   # EDIT — Standards Reference + Task→Required Reading rows extended
+│   ├── PROJECT_STATE.md                            # EDIT — header gains "Lifecycle Stage: Setup (since YYYY-MM-DD)"
+│   └── docs/
+│       └── standards/
+│           └── LIFECYCLE.md                        # NEW — stage definitions, transition rules
+├── install.sh                                      # EDIT — substitutes YYYY-MM-DD with today's date on bootstrap
+├── PROJECT_STATE.md                                # EDIT (this repo's own) — Lifecycle Stage: Pilot (since 2026-05-23)
+└── docs/
+    └── decisions/
+        └── ADR-0003-adopt-lifecycle-stages.md      # NEW — captures this decision
 ```
 
 Five stages, monotonically forward, with forward-skips allowed:
@@ -51,7 +57,7 @@ Five stages, monotonically forward, with forward-skips allowed:
 
 **Three core rules:**
 
-1. **Monotonic forward, skips allowed.** A library may go `Setup → Pilot → Maintenance` (no Launch). A PoC may go `Setup → Pilot → Archive`. Backward transitions are illegal — a Launch→Pilot regression requires an explicit "regression ADR" (see §5 Edge Cases).
+1. **Monotonic forward, skips allowed.** A library may go `Setup → Pilot → Maintenance` (no Launch). A PoC may go `Setup → Pilot → Archive`. Backward transitions are illegal — a Launch→Pilot regression requires an explicit "regression ADR" (see §6 Edge Cases).
 2. **Transitions are confirmed by user declaration.** Entry signals are guidance; the transition is real only after `/state-sync` updates `PROJECT_STATE.md` (and, where required, a `/decide` ADR lands).
 3. **Stage is orthogonal to Feature Phase.** A project at Stage = Pilot can still run any feature through Phases 1–6. Stage does not modify the pipeline; it modifies the *posture* of work done within it (e.g., `/document-release` may be lighter in Pilot than in Launch).
 
@@ -77,7 +83,7 @@ The header gains one line, placed immediately under the title:
 
 - **Value:** exactly one of `Setup`, `Pilot`, `Launch`, `Maintenance`, `Archive`.
 - **`since` date:** the date the project *entered* the current stage. Preserved across edits; updated only on real transitions.
-- **Cardinality:** exactly one stage per project. Repos hosting multiple independent projects are out of scope (see §5).
+- **Cardinality:** exactly one stage per project. Repos hosting multiple independent projects are out of scope (see §6).
 - **Seed:** `install.sh` initializes new projects to `Setup (since <today>)`.
 
 ### 3. Transition obligations
@@ -97,7 +103,21 @@ Rationale:
 - A skipped stage means the stage *never applied* to the project (a library is never in Launch; a PoC is never in Maintenance). There is no decision to record about leaving a posture the project never had — only the destination transition's ADR is required.
 - No automated enforcement. The orchestrator pattern is "warn, do not reject" (consistent with ADR-0000 and ADR-0001).
 
-### 4. Document and tooling changes
+### 4. Stage posture for AI agents
+
+The stage label is load-bearing only if AI sessions adjust their behavior to match. `LIFECYCLE.md` defines the following posture per stage. AI agents that read `PROJECT_STATE.md` MUST adopt the posture matching the current stage; if a user request conflicts with that posture, the agent surfaces the conflict and suggests either deferring the request or transitioning the stage first.
+
+| Stage | Default posture | What to lean into | What to push back on |
+|---|---|---|---|
+| **Setup** | Foundation-first. | Build env, linter, CI, scaffolding, repo layout, ADR baseline. | Domain features before tooling exists ("write the linter config first"). |
+| **Pilot** | Speed over rigor. | Rapid prototyping, exercising the core scenario end-to-end, accepting interface churn. | Demands for strict test coverage, exhaustive edge-case handling, formal migration plans. Suggest revisiting at Launch. |
+| **Launch** | Stability and backwards compatibility. | Tests, migration plans, changelogs, deliberate change control, user-impact review on every breaking change. | "Just rewrite it" / "let's break the API" without a documented migration and ADR. |
+| **Maintenance** | Bug fixes and refactors only. | Defect repair, security patches, dependency upkeep, incremental polish. | New features. If the user requests one, surface "this looks like new-feature work — consider transitioning out of Maintenance first" and pause for confirmation. |
+| **Archive** | Read-only. | Questions, archaeology, doc updates that clarify the archived state. | All code changes. If a change is genuinely needed, require a `Reactivation ADR` returning the project to Pilot before any edit. |
+
+These postures are guidance, not hard rules — the user can always override with explicit instruction. The point is that the *default* matches the project's operational reality.
+
+### 5. Document and tooling changes
 
 Five files change in lockstep when this design is accepted:
 
@@ -107,9 +127,9 @@ Five files change in lockstep when this design is accepted:
 4. **EDIT:** `install.sh` — template substitution replaces `YYYY-MM-DD` with today's date during bootstrap.
 5. **EDIT:** `PROJECT_STATE.md` (this repo) — `Lifecycle Stage: Pilot (since 2026-05-23)` added. The repo itself is in Pilot — the orchestrator standard is usable but actively expanding.
 
-`/state-sync` is *not* required to change for adoption. The slash command already accepts free-form edits to `PROJECT_STATE.md` and can update the header line as part of a normal sync. An optional `--stage <Stage>` argument that triggers the obligation-checklist from §3 is left as a future enhancement, not in scope for adoption.
+`/state-sync` is *not* required to change for adoption. The slash command already accepts free-form edits to `PROJECT_STATE.md` and can update the header line as part of a normal sync. Two enhancements are left as future work, not in scope for adoption: (a) an optional `--stage <Stage>` argument that triggers the obligation-checklist from §3, and (b) a soft-validation warning when the stage value does not match one of the five canonical labels (`Setup` / `Pilot` / `Launch` / `Maintenance` / `Archive`) — to catch typos like `Beta`, `Active`, `Testing` without rejecting the edit.
 
-### 5. Edge cases
+### 6. Edge cases
 
 | Case | Stage path | Note |
 |---|---|---|
@@ -120,7 +140,7 @@ Five files change in lockstep when this design is accepted:
 | Monorepo (N independent projects in one repo) | Out of scope for this standard | Repo split recommended. If unavoidable, per-subproject `PROJECT_STATE.md`. The template assumes 1 repo = 1 project. |
 | Project doing only bug fixes / refactors | No stage change | Stage tracks *operational mode*, not activity volume. |
 
-### 6. Migration
+### 7. Migration
 
 **This repo (`init-project`):** the five lockstep changes above land in one PR alongside `ADR-0003`. An e2e seed assertion is added: bootstrapped projects must have a `Lifecycle Stage:` line in their `PROJECT_STATE.md`.
 
@@ -133,7 +153,7 @@ The set of changes above (new file, edited template, edited CLAUDE.md, edited in
 - **Title:** Adopt project lifecycle stages (Setup→Pilot→Launch→Maintenance→Archive)
 - **Status:** Accepted (on user approval)
 - **Date:** 2026-05-27
-- **Consequences:** Listed in §4. No new dependencies; no enforcement layer; one new standard file; one header line in every project.
+- **Consequences:** Listed in §5. No new dependencies; no enforcement layer; one new standard file; one header line in every project; AI sessions will adjust posture per §4.
 
 ## Open Questions
 
