@@ -51,6 +51,7 @@ before starting work.**
 | `WORKFLOW.md` | Six-phase pipeline (product → architecture → design → tasks → execute → ship)     |
 | `QUALITY.md`  | Testing strategy, security principles, accessibility, performance                 |
 | `REVIEW.md`   | Code review checklist                                                             |
+| `LIFECYCLE.md`| Project lifecycle stages (Setup → Pilot → Launch → Maintenance → Archive), transition rules |
 | `STACK.md`    | **Language overlay** — tech stack, framework patterns                             |
 | `TOOLS.md`    | **Language overlay** — dev commands, linter, test runner, security scanner        |
 
@@ -86,6 +87,7 @@ Before starting work, read the documents mapped to your task type:
 | Database / Migration       | STACK (Database & Infrastructure), TOOLS (DB commands)   |
 | Deployment / DevOps        | STACK (Deployment), TOOLS (Deployment commands)          |
 | Code review / PR           | REVIEW                                                   |
+| Lifecycle stage transition / archive decision | LIFECYCLE                                                |
 
 ## Behavioral Guidelines
 
