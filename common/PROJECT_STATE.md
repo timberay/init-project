@@ -1,5 +1,6 @@
 # PROJECT_STATE
 
+> Lifecycle Stage: Setup (since YYYY-MM-DD)
 > Last Updated: never (run `/state-sync` to populate)
 
 ## Current Phase
