@@ -13,6 +13,7 @@ See `docs/decisions/README.md` for the full index.
 - ADR-0000 — Adopt PROJECT_STATE + ADR + Hooks orchestrator (Accepted, 2026-05-23)
 - ADR-0001 — Quality gates owned by pre-commit + CI (Accepted, 2026-05-24)
 - ADR-0002 — Rails pre-commit tolerates missing rubocop gem and excludes `.enc` (Accepted, 2026-05-24)
+- ADR-0003 — Adopt project lifecycle stages (Setup → Pilot → Launch → Maintenance → Archive) (Accepted, 2026-05-27)
 
 ## Active Work
 (none)
