@@ -10,3 +10,6 @@
 
 # Test artefacts
 tests/tmp/
+
+# Local AI/CLI tooling artefacts (per-machine, not for sharing)
+.antigravitycli/
