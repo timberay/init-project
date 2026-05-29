@@ -11,5 +11,8 @@
 # Test artefacts
 tests/tmp/
 
+# Local installer simulation scratch (mock apps with their own nested .git)
+simulation/
+
 # Local AI/CLI tooling artefacts (per-machine, not for sharing)
 .antigravitycli/
