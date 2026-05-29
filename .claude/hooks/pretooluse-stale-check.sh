@@ -7,6 +7,10 @@
 
 set -euo pipefail
 
+# Degrade to a silent no-op if jq is unavailable, rather than failing the hook
+# on every Edit/Write.
+command -v jq >/dev/null 2>&1 || exit 0
+
 payload="$(cat)"
 tool="$(printf '%s' "$payload" | jq -r '.tool_name // empty' 2>/dev/null || true)"
 

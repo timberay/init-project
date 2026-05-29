@@ -152,4 +152,35 @@ rm -rf "$TMP_EXIT"
 [[ "$rc" -eq 0 ]] || fail "pretooluse: must exit 0 even when warning (got rc=$rc)"
 ok "pretooluse: exits 0 even when warning (never blocks)"
 
+# --- jq-absent degradation: every hook must be a silent no-op, exit 0 ---
+# Build a PATH that has the usual coreutils but deliberately omits jq, so we can
+# prove the hooks degrade gracefully on machines without jq installed.
+JQLESS_BIN="$(mktemp -d)"
+for b in cat grep printf stat date tr sed env bash dirname; do
+  src="$(command -v "$b" 2>/dev/null)" && [[ -n "$src" ]] && ln -s "$src" "$JQLESS_BIN/$b" 2>/dev/null
+done
+run_jqless() { PATH="$JQLESS_BIN" bash "$1"; }
+
+# sessionstart: silent + exit 0
+set +e
+out="$(printf '' | run_jqless "$SS" 2>&1)"; rc=$?
+set -e
+[[ "$rc" -eq 0 && -z "$out" ]] || fail "sessionstart: jq-absent should be silent exit 0 (rc=$rc out=$out)"
+ok "sessionstart: degrades to silent no-op when jq is absent"
+
+# userpromptsubmit-remind: silent + exit 0 even on a matching prompt
+set +e
+out="$(printf '{"prompt":"why did we pick Redis"}' | run_jqless "$UP" 2>&1)"; rc=$?
+set -e
+[[ "$rc" -eq 0 && -z "$out" ]] || fail "remind: jq-absent should be silent exit 0 (rc=$rc out=$out)"
+ok "userpromptsubmit-remind: degrades to silent no-op when jq is absent"
+
+# pretooluse-stale-check: silent + exit 0 even for a target tool
+set +e
+out="$(printf '{"tool_name":"Edit"}' | run_jqless "$PT" 2>&1)"; rc=$?
+set -e
+[[ "$rc" -eq 0 && -z "$out" ]] || fail "pretooluse: jq-absent should be silent exit 0 (rc=$rc out=$out)"
+ok "pretooluse-stale-check: degrades to silent no-op when jq is absent"
+rm -rf "$JQLESS_BIN"
+
 echo "test_orchestrator_hooks.sh: ALL PASS"

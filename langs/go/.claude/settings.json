@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path' | { read -r f; if [[ \"$f\" == *.go ]] && command -v gofmt >/dev/null; then gofmt -w \"$f\" >/dev/null 2>&1; go vet ./... 2>&1; fi; } 2>/dev/null || true",
+            "command": "command -v jq >/dev/null 2>&1 || exit 0; jq -r '.tool_input.file_path' | { read -r f; if [[ \"$f\" == *.go ]] && command -v gofmt >/dev/null; then gofmt -w \"$f\" >/dev/null 2>&1; ( cd \"$(dirname \"$f\")\" && go vet . 2>&1 ); fi; } 2>/dev/null || true",
             "timeout": 30,
             "statusMessage": "Formatting and vetting Go file..."
           }

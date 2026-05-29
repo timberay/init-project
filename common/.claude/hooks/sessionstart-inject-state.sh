@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# Degrade to a silent no-op if jq is unavailable, rather than failing the hook
+# on every session start.
+command -v jq >/dev/null 2>&1 || exit 0
+
 state_file="PROJECT_STATE.md"
 adr_index="docs/decisions/README.md"
 

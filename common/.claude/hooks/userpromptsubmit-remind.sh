@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+# Degrade to a silent no-op if jq is unavailable, rather than failing the hook
+# on every prompt.
+command -v jq >/dev/null 2>&1 || exit 0
+
 payload="$(cat)"
 # Tolerate malformed JSON: a non-JSON payload should make this hook a no-op,
 # not exit non-zero (which Claude Code interprets as a blocking error).
