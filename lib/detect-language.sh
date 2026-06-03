@@ -1,8 +1,8 @@
 # lib/detect-language.sh — choose one language overlay for a target directory.
 # Usage (sourced): detect_language [<override>]
-# Prints rails|python|go to stdout, hints to stderr.
+# Prints rails|python|go|bash to stdout, hints to stderr.
 
-_BASE_FILES_LANGS=(rails python go)
+_BASE_FILES_LANGS=(rails python go bash)
 
 _is_valid_lang() {
   local candidate="$1"
@@ -35,21 +35,7 @@ detect_language() {
     printf 'go\n'; return 0
   fi
 
-  # Ambiguous: interactive prompt unless suppressed.
-  if [[ "${BASE_FILES_NONINTERACTIVE:-0}" == "1" ]]; then
-    log_error "no manifest detected and BASE_FILES_NONINTERACTIVE=1; re-run with --lang <rails|python|go>"
-    return 3
-  fi
-
-  log_warn "no language manifest detected in $(pwd)"
-  printf 'Select language: ' >&2
-  local choice
-  select choice in "${_BASE_FILES_LANGS[@]}"; do
-    if [[ -n "${choice:-}" ]]; then
-      printf '%s\n' "$choice"
-      return 0
-    fi
-  done < /dev/tty
-  log_error "no selection made"
-  return 3
+  log_warn "no language manifest detected in $(pwd); defaulting to bash overlay"
+  printf 'bash\n'
+  return 0
 }

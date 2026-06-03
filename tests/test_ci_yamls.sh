@@ -8,7 +8,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 ok()   { echo "ok: $1"; }
 
-for lang in python go rails; do
+for lang in python go rails bash; do
   f="$ROOT/langs/$lang/.github/workflows/ci.yml"
   [[ -f "$f" ]] || fail "$lang: ci.yml missing"
   grep -q "^name: CI"        "$f" || fail "$lang: ci.yml missing 'name: CI'"
@@ -33,5 +33,9 @@ grep -q "ruby/setup-ruby"    "$ROOT/langs/rails/.github/workflows/ci.yml" \
   || fail "rails: ci.yml missing setup-ruby"
 grep -q "bin/rails test"     "$ROOT/langs/rails/.github/workflows/ci.yml" \
   || fail "rails: ci.yml missing 'bin/rails test' step"
+grep -q "shellcheck"         "$ROOT/langs/bash/.github/workflows/ci.yml" \
+  || fail "bash: ci.yml missing shellcheck"
+grep -q "bash -n"            "$ROOT/langs/bash/.github/workflows/ci.yml" \
+  || fail "bash: ci.yml missing bash syntax check"
 
 echo "test_ci_yamls.sh: ALL PASS"

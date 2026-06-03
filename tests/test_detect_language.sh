@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test: detect_language returns rails/python/go from the right manifest files,
+# Test: detect_language returns rails/python/go/bash from the right manifest files,
 # and respects the --lang override (passed as the function's positional arg).
 set -u
 
@@ -73,14 +73,15 @@ set -e
 [[ "$rc" -eq 2 ]] || fail "invalid override should exit with code 2 (got $rc)"
 ok "invalid override rejected with rc=2"
 
-# Case 9: ambiguous (no manifest, no override) -> exit code 3 AND prints hint to stderr
+# Case 9: empty project defaults to bash
 mkdir "$TMP/empty-proj"
-set +e
-err=$( ( cd "$TMP/empty-proj" && BASE_FILES_NONINTERACTIVE=1 detect_language "" ) 2>&1 1>/dev/null )
-rc=$?
-set -e
-[[ "$rc" -eq 3 ]] || fail "ambiguous in non-interactive mode should exit with code 3 (got $rc)"
-[[ "$err" == *"--lang"* ]] || fail "ambiguous error should mention --lang (got: $err)"
-ok "ambiguous in non-interactive mode rejected with rc=3"
+r=$(detect_in "$TMP/empty-proj")
+[[ "$r" == "bash" ]] || fail "empty project -> bash (got '$r')"
+ok "empty project defaults to bash"
+
+# Case 10: non-interactive empty project also defaults to bash
+r=$( ( cd "$TMP/empty-proj" && BASE_FILES_NONINTERACTIVE=1 detect_language "" ) )
+[[ "$r" == "bash" ]] || fail "non-interactive empty project -> bash (got '$r')"
+ok "non-interactive empty project defaults to bash"
 
 echo "test_detect_language.sh: ALL PASS"

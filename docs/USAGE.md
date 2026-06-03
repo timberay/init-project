@@ -1,7 +1,7 @@
 # Usage Guide
 
 Detailed reference for using `init-project` (also known as `base-files`) to
-bootstrap a new Ruby on Rails, Python, or Go project with Claude Code
+bootstrap a new Ruby on Rails, Python, Go, or Bash/Shell project with Claude Code
 guidance, pre-commit hooks, and recommended plugins.
 
 For a one-page quick start, see [README](../README.md). This document is the
@@ -16,7 +16,7 @@ to extend the template to a new language.
 2. [Prerequisites](#2-prerequisites)
 3. [Installing the template once](#3-installing-the-template-once)
 4. [Bootstrapping a new project](#4-bootstrapping-a-new-project)
-5. [The five installer phases in detail](#5-the-five-installer-phases-in-detail)
+5. [The six installer phases in detail](#5-the-six-installer-phases-in-detail)
 6. [Command-line flags reference](#6-command-line-flags-reference)
 7. [Walkthroughs](#7-walkthroughs)
 8. [What you get](#8-what-you-get)
@@ -36,10 +36,10 @@ to extend the template to a new language.
 `init-project` is a **template-and-installer** pair, not a code library and
 not a framework scaffolder. Its job is to drop a consistent set of guidance
 documents and Claude Code hook configuration into every new project you start,
-so that you (and Claude) approach Rails, Python, and Go projects with the same
-discipline and the right tooling.
+so that you (and Claude) approach Rails, Python, Go, and shell-first projects
+with the same discipline and the right tooling.
 
-Concretely, `install.sh` does five things, in order, in roughly five seconds:
+Concretely, `install.sh` does six things, in order, in roughly five seconds:
 
 1. Detects which language overlay applies, from the project's manifest file.
 2. Reports any missing OS-level tools (without installing them).
@@ -47,13 +47,15 @@ Concretely, `install.sh` does five things, in order, in roughly five seconds:
    into the project's working directory.
 4. Deep-merges the common Claude Code hook settings with the language-specific
    hooks into a single `.claude/settings.json`.
-5. Installs the recommended Claude Code plugins via the official
+5. Creates compatibility links so Claude Code and Codex share project skills.
+6. Installs the recommended Claude Code plugins via the official
    `claude plugin` CLI (idempotent — already-installed plugins are skipped).
 
 The template intentionally does **not** scaffold framework code. You are
-expected to run `rails new .`, `uv init`, or `go mod init <module>` yourself.
-The template adds the guidance and hooks *around* that framework, not in place
-of it.
+expected to run `rails new .`, `uv init`, `go mod init <module>`, or your
+preferred shell project setup yourself. The template adds the guidance and
+hooks *around* that framework, not in place of it. If no manifest exists yet,
+the installer applies the `bash` overlay by default.
 
 ---
 
@@ -75,7 +77,7 @@ You need these on the machine before running the installer.
 |-----------|-----------------------------------------------------------------------------|---------------------------------------------|
 | `claude`  | Installing the recommended Claude Code plugins automatically.                | If absent, the installer skips phase 6 with a warning and your files are still placed. |
 | `gh`      | Convenient for the subsequent step of creating a remote repository.          | Not used by the installer itself.           |
-| Language runtime | The matching runtime for your overlay (`ruby`, `python3`, or `go`).   | Reported but not installed by the installer. |
+| Language runtime | The matching runtime for your overlay (`ruby`, `python3`, `go`, or `bash`). | Reported but not installed by the installer. |
 
 The installer will report any missing tool with the exact install command for
 your platform. It never installs anything system-wide on your behalf.
@@ -182,20 +184,19 @@ git init && git add . && git commit -m "Initial commit"
 ### Empty directory (no manifest yet)
 
 If you run the installer in an empty directory, language auto-detection
-cannot work. You must pass `--lang` explicitly:
+defaults to the `bash` overlay:
 
 ```bash
 mkdir -p ~/projects/blank && cd ~/projects/blank
-~/projects/00.base-files/install.sh --lang python
+~/projects/00.base-files/install.sh
 ```
 
-In an interactive terminal, the installer will prompt you to pick instead of
-failing. Set `BASE_FILES_NONINTERACTIVE=1` to make it fail fast instead of
-prompting (useful in CI).
+Pass `--lang <rails|python|go|bash>` when you already know the target stack and
+want to override detection.
 
 ---
 
-## 5. The five installer phases in detail
+## 5. The six installer phases in detail
 
 The installer announces each phase with a colored section header. Knowing
 what each phase does helps you read the output and recover from partial runs.
@@ -210,7 +211,7 @@ order:
 | `Gemfile` or `*.gemspec`  | `rails`         |
 | `pyproject.toml`, `requirements.txt`, or `Pipfile` | `python` |
 | `go.mod`                  | `go`            |
-| (none)                    | interactive prompt, or `--lang <x>` required |
+| (none)                    | `bash`          |
 
 The `--lang` flag overrides detection unconditionally.
 
@@ -286,7 +287,7 @@ phase entirely (e.g., in CI or when `claude` CLI is not on PATH).
 
 | Flag             | Default | Effect |
 |------------------|---------|--------|
-| `--lang <x>`     | auto-detect | Force the overlay to `rails`, `python`, or `go`. Skips manifest detection. |
+| `--lang <x>`     | auto-detect | Force the overlay to `rails`, `python`, `go`, or `bash`. Skips manifest detection. |
 | `--dry-run`      | off     | Print the plan and exit. No files written, no `claude plugin` calls made. Safe to run anywhere. |
 | `--force`        | off     | Skip the per-file overwrite prompt. Existing files are always backed up with a timestamp suffix and overwritten. Pair with `--dry-run` to see exactly what would change. |
 | `--skip-skills`  | off     | Skip phase 6 (plugin installation) entirely. Use this when `claude` CLI is missing, in CI, or when you manage plugins another way. |
@@ -301,7 +302,7 @@ phase entirely (e.g., in CI or when `claude` CLI is not on PATH).
 # Force overwrite, but still see what would happen first
 ~/projects/00.base-files/install.sh --dry-run --force
 
-# CI-friendly: fail fast on ambiguous detection, no plugin install
+# CI-friendly: explicit overlay, overwrite prompts skipped, no plugin install
 BASE_FILES_NONINTERACTIVE=1 ~/projects/00.base-files/install.sh \
     --lang go --force --skip-skills
 
@@ -313,12 +314,13 @@ BASE_FILES_NONINTERACTIVE=1 ~/projects/00.base-files/install.sh \
 
 | Variable                       | Effect |
 |--------------------------------|--------|
-| `BASE_FILES_NONINTERACTIVE=1`  | When language cannot be auto-detected, fail with exit code 3 instead of prompting. Required in CI. |
+| `BASE_FILES_NONINTERACTIVE=1`  | Reserved for non-interactive runs. Language detection now defaults to `bash` when no manifest exists; pair this with `--force` in CI to avoid file-conflict prompts. |
 | `NO_COLOR=1`                   | Suppress ANSI color codes in logger output. Useful for piping to a file or log aggregator. Must be set BEFORE the installer runs (the color decision is captured at source-time inside `lib/log.sh`). |
 | `REQUIRED_OS=(...)`            | Override the list of OS-level tools the installer probes in phase 2. Mainly for testing. |
 | `REQUIRED_LANG_rails=(...)`    | Override the Ruby-side runtime list (default: `ruby`). |
 | `REQUIRED_LANG_python=(...)`   | Override the Python-side runtime list (default: `python3`). |
 | `REQUIRED_LANG_go=(...)`       | Override the Go-side runtime list (default: `go`). |
+| `REQUIRED_LANG_bash=(...)`     | Override the Bash-side runtime list (default: `bash`). |
 
 ### Exit codes
 
@@ -465,7 +467,7 @@ After a successful run, the target project contains:
 │       ├── WORKFLOW.md                # Six-phase pipeline for new feature work
 │       ├── QUALITY.md                 # Test pyramid, security principles, accessibility, perf
 │       ├── REVIEW.md                  # Code-review checklist
-│       ├── STACK.md                   # Framework-specific tech stack (Rails / Python / Go)
+│       ├── STACK.md                   # Framework-specific tech stack (Rails / Python / Go / Bash)
 │       └── TOOLS.md                   # Framework-specific dev commands & linters
 ├── PROJECT_STATE.md                  # Orchestrator state — "where the project is right now", refreshed via /state-sync
 ├── docs/decisions/                   # Append-only ADR log (decisions live here, not in git log)
@@ -786,6 +788,21 @@ yet, so you'd have to add it. Simpler: rename the flag instead.
 
 ## 12. Adding a new language overlay
 
+Recommended next overlays, in order:
+
+| Candidate | Detect by | Why add it |
+|-----------|-----------|------------|
+| `nextjs` / `typescript` | `package.json` with `next`, `next.config.*`, `tsconfig.json` | Highest-value next web-app overlay; needs ESLint, type-check, test, and build gates. |
+| `node` | `package.json` without `next` | Covers CLIs, libraries, Express/Fastify APIs, and general JavaScript/TypeScript projects. |
+| `rust` | `Cargo.toml` | Excellent CLI/system-project fit with `cargo fmt`, `clippy`, and `test`. |
+| `java-spring` | `pom.xml`, `build.gradle`, or `build.gradle.kts` | Common backend stack with Maven/Gradle conventions. |
+| `dotnet` | `*.sln` or `*.csproj` | Common enterprise/API stack with `dotnet format` and `dotnet test`. |
+| `php-laravel` | `composer.json` with `laravel/framework` | Common web-app stack with Pint/PHPStan/Pest or PHPUnit conventions. |
+| `iac` | `*.tf`, `Chart.yaml`, `kustomization.yaml` | DevOps-heavy repos need Terraform/Helm/Kubernetes validation and secret scanning. |
+
+Add `nextjs` first if you frequently create web apps; split out a general
+`node` overlay later when non-Next JavaScript/TypeScript projects become common.
+
 To support Rust, Elixir, Crystal, or any other language:
 
 ### 12.1 Create the overlay directory
@@ -943,17 +960,19 @@ Force the right one:
 ~/projects/00.base-files/install.sh --lang go
 ```
 
-### Interactive prompt won't accept input
+### File conflict prompt won't accept input
 
-The installer uses `</dev/tty` for the `select` prompt and the per-file
-conflict prompt. If you run it under a shell that has no TTY (e.g. piped
-through another command), it hangs or fails.
+The installer may prompt when a destination file already exists. If you run it
+under a shell that has no TTY (e.g. piped through another command), that prompt
+can fail.
 
 Fixes:
 
-- Pass `--lang <x>` explicitly to skip language prompt.
+- Pass `--lang <x>` explicitly if you want to avoid relying on manifest
+  detection or the default `bash` overlay.
 - Pass `--force` to skip the per-file conflict prompt.
-- Set `BASE_FILES_NONINTERACTIVE=1` to fail fast instead of hanging.
+- Set `BASE_FILES_NONINTERACTIVE=1` in CI for clarity, but still use `--force`
+  when existing files may be present.
 
 ### Merged `settings.json` is invalid
 
@@ -1025,7 +1044,7 @@ RUN_SMOKE=1 ./tests/run_all.sh
 | Test file                          | Module                       | What it checks |
 |------------------------------------|------------------------------|-----------------|
 | `tests/test_log.sh`                | `lib/log.sh`                 | Each log function prefix; NO_COLOR contract; stderr routing of `log_warn`/`log_error` |
-| `tests/test_detect_language.sh`    | `lib/detect-language.sh`     | All 6 manifests detected; `--lang` override beats detection; invalid override → exit 2; ambiguous + non-interactive → exit 3 |
+| `tests/test_detect_language.sh`    | `lib/detect-language.sh`     | Rails/Python/Go manifests detected; empty projects default to Bash; `--lang` override beats detection; invalid override → exit 2 |
 | `tests/test_check_deps.sh`         | `lib/check-deps.sh`          | Real deps not falsely missing; injected fake dep is recorded in `MISSING_DEPS` |
 | `tests/test_copy_files.sh`         | `lib/copy-files.sh`          | Fresh copy; conflict overwrites with backup; dry-run writes nothing |
 | `tests/test_merge_settings.sh`     | `lib/merge-settings.sh`      | Hook arrays concatenated; dry-run is read-only; missing input fails |
@@ -1097,7 +1116,7 @@ when `RUN_SMOKE=1` is set, since they're slower.
 │
 ├── lib/                             # installer internals (sourced bash modules)
 │   ├── log.sh                       # color logger (NO_COLOR aware)
-│   ├── detect-language.sh           # manifest sniffer + interactive fallback
+│   ├── detect-language.sh           # manifest sniffer + bash fallback
 │   ├── check-deps.sh                # OS-tool presence probe (report-only)
 │   ├── copy-files.sh                # tree copy with timestamped backup + dry-run
 │   ├── merge-settings.sh            # jq deep-merge with validation

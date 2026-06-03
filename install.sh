@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install.sh — bootstrap a new project from base-files.
 # Run from inside the target project directory:
-#   ~/projects/00.base-files/install.sh [--lang rails|python|go] [--dry-run] [--force] [--skip-skills]
+#   ~/projects/00.base-files/install.sh [--lang rails|python|go|bash] [--dry-run] [--force] [--skip-skills]
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,7 +30,8 @@ creates Claude/Codex/opencode compatibility paths, and installs recommended
 Claude Code plugins.
 
 Options:
-  --lang <rails|python|go>   Override language auto-detection
+  --lang <rails|python|go|bash>
+                             Override language auto-detection
   --dry-run                  Print the plan without writing files or invoking claude
   --force                    Overwrite existing files (always with timestamped backup)
   --skip-skills              Skip plugin installation entirely

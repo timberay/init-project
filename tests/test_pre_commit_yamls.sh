@@ -8,7 +8,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 ok()   { echo "ok: $1"; }
 
-for lang in python go rails; do
+for lang in python go rails bash; do
   f="$ROOT/langs/$lang/.pre-commit-config.yaml"
   [[ -f "$f" ]] || fail "$lang: .pre-commit-config.yaml missing"
   grep -q "^repos:" "$f" || fail "$lang: missing top-level 'repos:' key"
@@ -27,5 +27,9 @@ grep -q "id: go-fmt" "$ROOT/langs/go/.pre-commit-config.yaml" \
   || fail "go: missing go-fmt hook"
 grep -q "rubocop" "$ROOT/langs/rails/.pre-commit-config.yaml" \
   || fail "rails: missing rubocop hook"
+grep -q "shellcheck" "$ROOT/langs/bash/.pre-commit-config.yaml" \
+  || fail "bash: missing shellcheck hook"
+grep -q "shfmt" "$ROOT/langs/bash/.pre-commit-config.yaml" \
+  || fail "bash: missing shfmt hook"
 
 echo "test_pre_commit_yamls.sh: ALL PASS"

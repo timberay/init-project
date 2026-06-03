@@ -43,4 +43,11 @@ copy_files "$TMP/src/common" "$TMP/src/langs/rails" "$TMP/dst3" 1 1  # force=1, 
 [[ ! -f "$TMP/dst3/docs/standards/RULES.md" ]] || fail "dry-run wrote a file"
 ok "dry-run is read-only"
 
+# Case 4: dry run with existing files does not prompt or fail
+mkdir -p "$TMP/dst4/docs/standards"
+echo "old-rules" > "$TMP/dst4/docs/standards/RULES.md"
+copy_files "$TMP/src/common" "$TMP/src/langs/rails" "$TMP/dst4" 0 1
+grep -q "old-rules" "$TMP/dst4/docs/standards/RULES.md" || fail "dry-run changed existing file"
+ok "dry-run conflict is non-interactive"
+
 echo "test_copy_files.sh: ALL PASS"

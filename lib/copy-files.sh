@@ -14,6 +14,10 @@ _copy_one() {
   fi
 
   if [[ -e "$dst" ]]; then
+    if [[ "$dry" -eq 1 && "$force" -ne 1 ]]; then
+      log_action "(dry-run) existing file: $dst (would prompt unless --force)"
+      return 0
+    fi
     if [[ "$force" -eq 1 ]]; then
       local bak; bak="${dst}$(_backup_suffix)"
       if [[ "$dry" -eq 1 ]]; then

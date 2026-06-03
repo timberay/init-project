@@ -1,0 +1,19 @@
+# Shell / script project ignores
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Logs and temp output
+*.log
+tmp/
+temp/
+.cache/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# smoke_empty.sh — empty target with no override → non-interactive mode fails fast.
+# smoke_empty.sh — empty target with no override → bash overlay by default.
 set -u
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,18 +10,19 @@ ok()   { echo "ok: $1"; }
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# Non-interactive ambiguous: should fail with mention of --lang.
-set +e
+# Non-interactive empty dir should default to bash and remain dry-run only.
 out=$( cd "$TMP" && BASE_FILES_NONINTERACTIVE=1 "$ROOT/install.sh" --dry-run --skip-skills 2>&1 )
-rc=$?
-set -e
-[[ "$rc" -ne 0 ]] || fail "non-interactive empty dir should exit non-zero (got $rc)"
-echo "$out" | grep -q -- "--lang" || fail "error message should mention --lang"
-ok "non-interactive empty dir rejected with hint"
+echo "$out" | grep -q "language: bash" || fail "dry-run empty dir did not default to bash"
+[[ ! -f "$TMP/CLAUDE.md" ]] || fail "dry-run wrote CLAUDE.md"
+ok "non-interactive empty dir defaults to bash"
 
-# With --lang go, it succeeds.
-( cd "$TMP" && "$ROOT/install.sh" --lang go --force --skip-skills >/dev/null 2>&1 ) || fail "install with --lang go failed"
-grep -q "Go" "$TMP/docs/standards/STACK.md" || fail "Go overlay not applied"
+# Empty dir real run also defaults to bash.
+( cd "$TMP" && "$ROOT/install.sh" --force --skip-skills >/dev/null 2>&1 ) || fail "install with default bash failed"
+grep -q "Shell Stack" "$TMP/docs/standards/STACK.md" || fail "bash overlay not applied"
+jq -e '.hooks.PostToolUse[0].hooks[0].command | contains("shellcheck")' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PostToolUse hook should reference shellcheck"
+ok "default bash overlay installed"
+
 [[ -f "$TMP/.agents/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
 head -2 "$TMP/.agents/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
 [[ -L "$TMP/.claude/skills" ]] || fail ".claude/skills symlink not installed"
@@ -58,6 +59,6 @@ jq -e '.hooks.UserPromptSubmit | map(.hooks[].command) | flatten | any(test("use
 jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("pretooluse-stale-check.sh"))' "$TMP/.claude/settings.json" >/dev/null \
   || fail "pretooluse-stale-check.sh not registered in merged PreToolUse"
 ok "orchestrator files bundled"
-ok "--lang override works in empty dir"
+ok "empty dir bootstrap works"
 
 echo "smoke_empty.sh: ALL PASS"
