@@ -6,7 +6,7 @@
 
 New feature work flows through six phases: four design phases (1–4) that separate product, architecture, technical design, and task breakdown, followed by execution (5) and ship (6). Do NOT skip phases. A `UserPromptSubmit` hook reminds you when a feature request is detected.
 
-> **Skill prerequisites.** Phases 3, 4, and 5 use **superpowers** skills which the template installer auto-installs (`superpowers:brainstorming`, `:writing-plans`, `:executing-plans`, `:test-driven-development`). Phases 1, 2, and 6 use **gstack** skills (`/office-hours`, `/plan-eng-review`, `/review`, `/ship`, `/land-and-deploy`, `/document-release`) which the installer **only verifies** — it expects gstack to be pre-installed at `~/.claude/skills/gstack/`. If gstack is missing, either install it separately (see your team's gstack onboarding) or substitute the listed skill with manual product/architecture/release notes; the phase boundaries themselves still apply.
+> **Skill prerequisites.** Phases 3, 4, and 5 use **superpowers** skills which the template installer auto-installs (`superpowers:brainstorming`, `:writing-plans`, `:executing-plans`, `:test-driven-development`). Phases 1, 2, and 6 use **gstack** skills (`/office-hours`, `/plan-eng-review`, `/review`, `/ship`, `/land-and-deploy`, `/document-release`) which the installer **only verifies** — it expects gstack to be pre-installed at `~/.agents/skills/gstack/` or legacy `~/.claude/skills/gstack/`. If gstack is missing, either install it separately (see your team's gstack onboarding) or substitute the listed skill with manual product/architecture/release notes; the phase boundaries themselves still apply.
 
 ### Design phases (1–4)
 
@@ -55,7 +55,8 @@ Run in this order; each gates the next:
 (gstack not installed in the current environment), substitute the bundled
 **`/push2gh`** project skill — it covers the commit → push → PR → optional
 automerge → cleanup arc. It is language-neutral and is installed at
-`.claude/skills/push2gh/SKILL.md` by `install.sh`. `/review` and
+`.agents/skills/push2gh/SKILL.md` by `install.sh`; Claude Code also sees it
+through the `.claude/skills` symlink. `/review` and
 `/document-release` still need manual substitutes (a careful diff read and
 a manual README/CHANGELOG sync respectively).
 

@@ -136,10 +136,10 @@ This project enforces quality at four distinct layers. Each layer answers a diff
 
 | Layer | When | Owner | Strength |
 |---|---|---|---|
-| Edit-time format/lint | On file save inside Claude Code | `.claude/settings.json` PostToolUse | Auto-fix, no block |
+| Edit-time format/lint | On file save inside supported agents | Agent hook config | Auto-fix where supported, no block |
 | Commit-time fast checks | On `git commit` (any tool) | `.pre-commit-config.yaml` (run via the installed git hook) | Block on violation |
 | CI fast + slow checks | On PR / push to `main` | `.github/workflows/ci.yml` | Block merge |
-| Orchestrator hooks (unrelated) | Session start, prompt submit, stale state | `.claude/hooks/*.sh` | Soft inject / warn |
+| Orchestrator hooks (unrelated) | Session start, prompt submit, stale state | `.agent-hooks/*.sh` via `.claude/settings.json` / `.codex/hooks.json` | Soft inject / warn |
 
 The single source of truth for fast checks is `.pre-commit-config.yaml`. CI re-runs `pre-commit run --all-files` and adds the test suite. Locally, `pre-commit install` (one-time, after `git init`) registers the git hook so every `git commit` runs the same yaml.
 

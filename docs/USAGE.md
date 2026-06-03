@@ -73,7 +73,7 @@ You need these on the machine before running the installer.
 
 | Tool      | Why                                                                         | Notes                                       |
 |-----------|-----------------------------------------------------------------------------|---------------------------------------------|
-| `claude`  | Installing the recommended Claude Code plugins automatically.                | If absent, the installer skips phase 5 with a warning and your files are still placed. |
+| `claude`  | Installing the recommended Claude Code plugins automatically.                | If absent, the installer skips phase 6 with a warning and your files are still placed. |
 | `gh`      | Convenient for the subsequent step of creating a remote repository.          | Not used by the installer itself.           |
 | Language runtime | The matching runtime for your overlay (`ruby`, `python3`, or `go`).   | Reported but not installed by the installer. |
 
@@ -248,7 +248,18 @@ This is why the language overlay can carry only its own hooks (pre-commit
 test, lint, file-formatter) without needing to repeat the common ones
 (graphify reminder, pipeline reminder).
 
-### Phase 5 — Install Claude Code plugins
+### Phase 5 — Create agent compatibility links
+
+Creates `.claude/skills -> ../.agents/skills` so Claude Code can use the same
+project skills that Codex scans natively from `.agents/skills`.
+
+If `.claude/skills` already exists, `install.sh` leaves it alone unless
+`--force` is used. With `--force`, the existing path is backed up before the
+symlink is created.
+
+---
+
+### Phase 6 — Install Claude Code plugins
 
 Runs the official `claude plugin` CLI to:
 
@@ -260,7 +271,7 @@ Runs the official `claude plugin` CLI to:
    - `code-review@claude-plugins-official`
    - `andrej-karpathy-skills@karpathy-skills`
 3. Verify (without installing) that the `graphify` and `gstack` skills are
-   present in `~/.claude/skills/graphify/` and `~/.claude/skills/gstack/`.
+   present in `~/.agents/skills/<name>/` or legacy `~/.claude/skills/<name>/`.
    These two live outside the claude plugin marketplaces and are installed
    separately by each team. If absent, you get a warning with a hint —
    `gstack` is required for `WORKFLOW.md` phases 1, 2, and 6.
@@ -278,7 +289,7 @@ phase entirely (e.g., in CI or when `claude` CLI is not on PATH).
 | `--lang <x>`     | auto-detect | Force the overlay to `rails`, `python`, or `go`. Skips manifest detection. |
 | `--dry-run`      | off     | Print the plan and exit. No files written, no `claude plugin` calls made. Safe to run anywhere. |
 | `--force`        | off     | Skip the per-file overwrite prompt. Existing files are always backed up with a timestamp suffix and overwritten. Pair with `--dry-run` to see exactly what would change. |
-| `--skip-skills`  | off     | Skip phase 5 (plugin installation) entirely. Use this when `claude` CLI is missing, in CI, or when you manage plugins another way. |
+| `--skip-skills`  | off     | Skip phase 6 (plugin installation) entirely. Use this when `claude` CLI is missing, in CI, or when you manage plugins another way. |
 | `-h`, `--help`   |         | Print usage and exit 0. |
 
 ### Useful combinations
@@ -340,15 +351,17 @@ bundle install
 # Now bootstrap the template
 ~/projects/00.base-files/install.sh
 # Expected output:
-#   == 1/5  Detecting language ==
+#   == 1/6  Detecting language ==
 #   [OK] language: rails
-#   == 2/5  Checking OS dependencies ==
+#   == 2/6  Checking OS dependencies ==
 #   [OK] jq found / git found / ruby found
-#   == 3/5  Copying common + rails files ==
+#   == 3/6  Copying common + rails files ==
 #   [OK] copied ... (many lines)
-#   == 4/5  Merging .claude/settings.json ==
+#   == 4/6  Merging .claude/settings.json ==
 #   [OK] merged settings.json -> ...
-#   == 5/5  Installing recommended Claude Code plugins ==
+#   == 5/6  Creating agent compatibility links ==
+#   [OK] linked .../.claude/skills -> ../.agents/skills
+#   == 6/6  Installing recommended Claude Code plugins ==
 #   [INFO] marketplace already added: claude-plugins-official
 #   [INFO] plugin already installed: superpowers@claude-plugins-official
 #   ... etc
@@ -509,7 +522,19 @@ After a successful run, the target project contains:
   for tests, linters, type-checking, security scanning, migrations, and
   running the app.
 
-- **`.claude/settings.json`** is the merged hook config. The `SessionStart`
+- **`AGENTS.md`** is the project guidance file for Codex, opencode, and other
+  agents that read the AGENTS.md convention. Claude Code reads `CLAUDE.md`;
+  keep both files aligned when changing durable policy.
+
+- **`opencode.json`** points opencode at `AGENTS.md` and the standards docs,
+  and sets conservative project permissions for edits, Bash commands, and
+  external-directory access.
+
+- **`.codex/hooks.json`** wires Codex hook events to the shared scripts in
+  `.agent-hooks/`. Current Codex releases enable hooks by default; no
+  `codex_hooks = true` flag is required.
+
+- **`.claude/settings.json`** is the merged Claude hook config. The `SessionStart`
   hook injects `PROJECT_STATE.md` + the ADR index into the session's first
   context. `UserPromptSubmit` hooks inject the pipeline reminder (on
   feature-request keywords) and the ADR reminder (on prior-decision keywords).
@@ -517,12 +542,13 @@ After a successful run, the target project contains:
   >7 days old; other `PreToolUse` hooks run the test suite and linter before
   `git commit`; `PostToolUse` hooks auto-format the file you just edited.
 
-- **`.claude/hooks/pipeline-reminder.txt`** is the context message the
+- **`.agent-hooks/pipeline-reminder.txt`** is the context message the
   pipeline-phase `UserPromptSubmit` hook injects when triggered.
 
-- **`.claude/hooks/sessionstart-inject-state.sh`**,
-  **`userpromptsubmit-remind.sh`**, **`pretooluse-stale-check.sh`** are the
-  three orchestrator hook scripts. See
+- **`.agent-hooks/sessionstart-inject-state.sh`**,
+  **`userpromptsubmit-remind.sh`**, **`userpromptsubmit-pipeline.sh`**,
+  **`pretooluse-stale-check.sh`**, and **`security-check.sh`** are the shared
+  hook scripts used by Claude Code and Codex. See
   `docs/decisions/ADR-0000-orchestrator-bootstrap.md` for the rationale.
 
 - **`.claude/commands/{decide,state-sync,supersede}.md`** are the three
@@ -544,10 +570,12 @@ The installer never touches:
 
 - Your shell rc files (`.bashrc`, `.zshrc`, etc.)
 - Global Claude Code config (`~/.claude/CLAUDE.md`, `~/.claude/settings.json`)
+- Global Codex config (`~/.codex/AGENTS.md`, `~/.codex/hooks.json`)
+- Global opencode config (`~/.config/opencode/AGENTS.md`, `opencode.json`)
 - Anything in `/usr/local/` or system-wide locations
 - Your language runtime, ORM, framework, or any package
 
-The only global side-effect is in phase 5, which uses the official
+The only global side-effect is in phase 6, which uses the official
 `claude plugin` CLI to add marketplaces and install plugins under
 `~/.claude/plugins/`. Use `--skip-skills` to suppress even that.
 
@@ -561,8 +589,9 @@ The only global side-effect is in phase 5, which uses the official
 | **`code-review`**            | `anthropics/claude-plugins-official`           | Branch/PR pre-landing review                                                   |
 | **`andrej-karpathy-skills`** | `forrestchang/andrej-karpathy-skills`          | Karpathy's coding-mistake guardrails — surgical changes, no overengineering    |
 
-These are installed by phase 5. Two more skills are **verified, not
-installed** — the installer checks `~/.claude/skills/<name>/` and warns if
+These are installed by phase 6. Two more skills are **verified, not
+installed** — the installer checks `~/.agents/skills/<name>/` first, then the
+legacy `~/.claude/skills/<name>/`, and warns if
 absent:
 
 | Skill      | Why it lives outside the marketplaces                                 | Required for                                       |
@@ -577,24 +606,25 @@ architecture / release notes in place of the missing skills.
 ### Bundled project skills
 
 The installer also lands the following skill directly into
-`<project>/.claude/skills/<name>/` — these live inside your project's git
-history (no global `~/.claude/skills/` dependency):
+`<project>/.agents/skills/<name>/` — these live inside your project's git
+history (no global `~/.agents/skills/` dependency). Claude Code sees the same
+skill through `<project>/.claude/skills`, a symlink created by `install.sh`.
 
 | Skill      | Where it lands                              | Purpose                                                                       |
 |------------|---------------------------------------------|-------------------------------------------------------------------------------|
-| `push2gh`  | `<project>/.claude/skills/push2gh/SKILL.md` | Commit → push → PR → optional automerge → cleanup. Use as a `gstack`-free substitute for `/ship` + `/land-and-deploy` in `WORKFLOW.md` phase 6. |
+| `push2gh`  | `<project>/.agents/skills/push2gh/SKILL.md` | Commit → push → PR → optional automerge → cleanup. Use as a `gstack`-free substitute for `/ship` + `/land-and-deploy` in `WORKFLOW.md` phase 6. |
 
 **Updating bundled skills.** Bundled skill bodies are **snapshots** taken
 when the template was built. To pull a newer copy from your global skills
 directory:
 
 ```bash
-cp ~/.claude/skills/push2gh/SKILL.md \
-   ~/projects/00.base-files/common/.claude/skills/push2gh/SKILL.md
+cp ~/.agents/skills/push2gh/SKILL.md \
+   ~/projects/00.base-files/common/.agents/skills/push2gh/SKILL.md
 
 cd ~/projects/00.base-files
-git diff common/.claude/skills/push2gh/SKILL.md      # review the delta
-git add common/.claude/skills/push2gh/SKILL.md
+git diff common/.agents/skills/push2gh/SKILL.md      # review the delta
+git add common/.agents/skills/push2gh/SKILL.md
 git commit -m "chore: refresh push2gh skill snapshot"
 git push
 ```
@@ -610,7 +640,7 @@ Once installed, Claude can invoke these skills automatically:
 - "Write an implementation plan for X" → `superpowers:writing-plans`
 - "Implement the plan at docs/superpowers/plans/..." → `superpowers:subagent-driven-development` or `superpowers:executing-plans`
 
-The pipeline reminder injected by `.claude/settings.json` reinforces this
+The pipeline reminder injected by `.claude/settings.json` and `.codex/hooks.json` reinforces this
 flow whenever you mention a feature-request keyword.
 
 ---

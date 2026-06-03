@@ -22,9 +22,20 @@ ok "non-interactive empty dir rejected with hint"
 # With --lang go, it succeeds.
 ( cd "$TMP" && "$ROOT/install.sh" --lang go --force --skip-skills >/dev/null 2>&1 ) || fail "install with --lang go failed"
 grep -q "Go" "$TMP/docs/standards/STACK.md" || fail "Go overlay not applied"
-[[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
-head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+[[ -f "$TMP/.agents/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
+head -2 "$TMP/.agents/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+[[ -L "$TMP/.claude/skills" ]] || fail ".claude/skills symlink not installed"
 ok "push2gh skill bundled"
+
+# Cross-agent config files must land.
+[[ -f "$TMP/AGENTS.md" ]] || fail "AGENTS.md not installed"
+[[ -f "$TMP/opencode.json" ]] || fail "opencode.json not installed"
+[[ -f "$TMP/.codex/hooks.json" ]] || fail ".codex/hooks.json not installed"
+jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("security-check.sh"))' "$TMP/.codex/hooks.json" >/dev/null \
+  || fail "Codex hooks should reference security-check.sh"
+jq -e '.instructions | index("AGENTS.md")' "$TMP/opencode.json" >/dev/null \
+  || fail "opencode.json should include AGENTS.md instructions"
+ok "Codex/opencode config bundled"
 
 # Orchestrator: STATE + ADR + hooks + commands must land
 [[ -f "$TMP/PROJECT_STATE.md" ]] || fail "PROJECT_STATE.md not installed"
@@ -34,9 +45,9 @@ grep -q "^> Lifecycle Stage: Setup (since ${TODAY})$" "$TMP/PROJECT_STATE.md" \
 ok "PROJECT_STATE.md seeded with Lifecycle Stage line dated today"
 [[ -f "$TMP/docs/decisions/README.md" ]] || fail "ADR index not installed"
 [[ -f "$TMP/docs/decisions/ADR-0000-orchestrator-bootstrap.md" ]] || fail "ADR-0000 not installed"
-[[ -x "$TMP/.claude/hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
-[[ -x "$TMP/.claude/hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
-[[ -x "$TMP/.claude/hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
 [[ -f "$TMP/.claude/commands/decide.md" ]] || fail "/decide command not installed"
 [[ -f "$TMP/.claude/commands/state-sync.md" ]] || fail "/state-sync command not installed"
 [[ -f "$TMP/.claude/commands/supersede.md" ]] || fail "/supersede command not installed"

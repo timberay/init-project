@@ -62,10 +62,12 @@ install_skills() {
 
   # Verify (not install) skills that live outside the claude plugin marketplaces.
   for skill in graphify gstack; do
-    if [[ -d "${HOME}/.claude/skills/${skill}" ]]; then
-      log_ok "${skill} skill detected at ~/.claude/skills/${skill}"
+    if [[ -d "${HOME}/.agents/skills/${skill}" ]]; then
+      log_ok "${skill} skill detected at ~/.agents/skills/${skill}"
+    elif [[ -d "${HOME}/.claude/skills/${skill}" ]]; then
+      log_ok "${skill} skill detected at legacy ~/.claude/skills/${skill}"
     else
-      log_warn "${skill} skill not found at ~/.claude/skills/${skill}; install manually if you want it"
+      log_warn "${skill} skill not found at ~/.agents/skills/${skill}; install manually if you want it"
     fi
   done
 }

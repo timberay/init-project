@@ -17,6 +17,8 @@ source "$SCRIPT_DIR/lib/copy-files.sh"
 source "$SCRIPT_DIR/lib/merge-settings.sh"
 # shellcheck source=lib/install-skills.sh
 source "$SCRIPT_DIR/lib/install-skills.sh"
+# shellcheck source=lib/agent-compat.sh
+source "$SCRIPT_DIR/lib/agent-compat.sh"
 
 usage() {
   cat <<EOF
@@ -24,7 +26,8 @@ Usage: install.sh [options]
 
 Run from inside the new project's directory. Detects language from manifest
 files, copies the common core + one language overlay, merges hook settings,
-and installs recommended Claude Code plugins.
+creates Claude/Codex/opencode compatibility paths, and installs recommended
+Claude Code plugins.
 
 Options:
   --lang <rails|python|go>   Override language auto-detection
@@ -63,15 +66,15 @@ log_info "target:  $TARGET"
 [[ "$FORCE"       -eq 1 ]] && log_warn "FORCE mode — existing files will be overwritten (backed up)"
 [[ "$SKIP_SKILLS" -eq 1 ]] && log_warn "SKIP-SKILLS mode — plugin installation suppressed"
 
-log_section "1/5  Detecting language"
+log_section "1/6  Detecting language"
 DETECTED_LANG="$(detect_language "$LANG_OVERRIDE")" || exit $?
 log_ok "language: $DETECTED_LANG"
 
-log_section "2/5  Checking OS dependencies"
+log_section "2/6  Checking OS dependencies"
 check_deps "$DETECTED_LANG" || exit $?
 MISSING_COUNT="${#MISSING_DEPS[@]}"
 
-log_section "3/5  Copying common + $DETECTED_LANG files"
+log_section "3/6  Copying common + $DETECTED_LANG files"
 copy_files \
   "$SCRIPT_DIR/common" \
   "$SCRIPT_DIR/langs/$DETECTED_LANG" \
@@ -91,24 +94,28 @@ if [[ "$DRY_RUN" -ne 1 && -f "$TARGET/PROJECT_STATE.md" ]]; then
   fi
 fi
 
-log_section "4/5  Merging .claude/settings.json"
+log_section "4/6  Merging .claude/settings.json"
 merge_settings \
   "$SCRIPT_DIR/common/.claude/settings.json" \
   "$SCRIPT_DIR/langs/$DETECTED_LANG/.claude/settings.json" \
   "$TARGET/.claude/settings.json" \
   "$DRY_RUN" || exit $?
 
+log_section "5/6  Creating agent compatibility links"
+setup_agent_compat "$TARGET" "$FORCE" "$DRY_RUN" || exit $?
+
 if [[ "$SKIP_SKILLS" -eq 0 ]]; then
-  log_section "5/5  Installing recommended Claude Code plugins"
+  log_section "6/6  Installing recommended Claude Code plugins"
   install_skills "$DRY_RUN"
 else
-  log_section "5/5  Plugin installation skipped (--skip-skills)"
+  log_section "6/6  Plugin installation skipped (--skip-skills)"
 fi
 
 log_section "Done"
 log_ok "language:        $DETECTED_LANG"
 log_ok "files copied:    common/ + langs/$DETECTED_LANG/"
 log_ok "settings merged: $TARGET/.claude/settings.json"
+log_ok "skills path:     $TARGET/.agents/skills + .claude/skills symlink"
 if [[ "$MISSING_COUNT" -gt 0 ]]; then
   log_warn "missing OS tools: ${MISSING_DEPS[*]}"
   log_warn "review the warnings above and install the missing tools before working in this project"

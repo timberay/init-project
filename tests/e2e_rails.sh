@@ -81,7 +81,7 @@ ok "clean commit succeeds after removing oversize file"
 
 # --- PROJECT_STATE drift hook ---
 touch -d "10 days ago" PROJECT_STATE.md
-out=$(printf '%s' '{"tool_name":"Edit"}' | bash .claude/hooks/pretooluse-stale-check.sh 2>&1)
+out=$(printf '%s' '{"tool_name":"Edit"}' | bash .agent-hooks/pretooluse-stale-check.sh 2>&1)
 echo "$out" | grep -q "stale" \
   || fail "drift hook did not warn on 10-day-old PROJECT_STATE.md (output: $out)"
 ok "drift hook warns on stale PROJECT_STATE.md"

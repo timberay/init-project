@@ -74,7 +74,9 @@ committing. `rails new --minimal` omits it by default.
 4. **Deep-merges** `common/.claude/settings.json` with the language
    overlay's `settings.json` into `.claude/settings.json`, validating
    the result with `jq`.
-5. **Installs recommended Claude Code plugins** via `claude plugin`.
+5. **Creates agent compatibility links** so Claude Code reads the project
+   skills from the same `.agents/skills` directory that Codex scans natively.
+6. **Installs recommended Claude Code plugins** via `claude plugin`.
    Skipped with `--skip-skills`.
 
 ### Options
@@ -94,6 +96,168 @@ Common combinations:
 ~/projects/init-project/install.sh --lang python --force  # override detection
 ~/projects/init-project/install.sh --skip-skills        # offline / no Claude CLI
 ```
+
+---
+
+## AI tool setup
+
+`install.sh` builds a project-local AI development environment for Claude Code,
+Codex, and opencode. It does not rewrite your personal global config by
+default; the generated files live in the target project.
+
+### Shared foundation
+
+Every supported AI tool starts from the same project state, decisions, and
+quality gates:
+
+```text
+PROJECT_STATE.md
+docs/decisions/
+docs/standards/
+.agent-hooks/
+.agents/skills/
+.pre-commit-config.yaml
+.github/workflows/ci.yml
+```
+
+- `PROJECT_STATE.md` records the current lifecycle stage, active work, and
+  open questions.
+- `docs/decisions/` stores ADRs. Accepted ADRs are append-only; reverse them
+  with a superseding ADR.
+- `docs/standards/` contains the development rules, workflow, review checklist,
+  quality policy, stack notes, and tool commands.
+- `.agent-hooks/` contains the shared hook scripts used by Claude Code and
+  Codex.
+- `.agents/skills/` is the project skill source of truth.
+- `.pre-commit-config.yaml` and `.github/workflows/ci.yml` are the real
+  enforcement layer, independent of which AI tool wrote the code.
+
+### Claude Code
+
+Claude Code is initialized with:
+
+```text
+CLAUDE.md
+.claude/settings.json
+.claude/commands/
+.claude/skills -> ../.agents/skills
+```
+
+`CLAUDE.md` is Claude Code's project instruction file. It tells Claude to read
+`PROJECT_STATE.md`, consult ADRs before changing prior decisions, follow TDD,
+keep refactors separate from behavior changes, and use the standards docs for
+task-specific rules.
+
+`.claude/settings.json` wires Claude Code hook events to the shared scripts:
+
+```text
+SessionStart      -> .agent-hooks/sessionstart-inject-state.sh
+UserPromptSubmit  -> .agent-hooks/userpromptsubmit-pipeline.sh
+UserPromptSubmit  -> .agent-hooks/userpromptsubmit-remind.sh
+PreToolUse Bash   -> .agent-hooks/security-check.sh
+PreToolUse edits  -> .agent-hooks/pretooluse-stale-check.sh
+```
+
+`.claude/commands/` installs the orchestrator slash commands:
+
+```text
+/decide
+/state-sync
+/supersede ADR-NNNN
+```
+
+`.claude/skills` is a symlink to `../.agents/skills`, so Claude Code sees the
+same project skills as Codex.
+
+### Codex
+
+Codex is initialized with:
+
+```text
+AGENTS.md
+.codex/config.toml
+.codex/hooks.json
+.agents/skills/
+```
+
+`AGENTS.md` is Codex's durable project guidance. It keeps the shared policy
+short: Korean conversation, English code/docs/commits, TDD, relevant checks,
+ADR discipline, pre-commit/CI as enforcement, and separate worktrees when
+running multiple coding agents in parallel.
+
+`.agents/skills/` is the native Codex skill location. The bundled `push2gh`
+skill lands at:
+
+```text
+.agents/skills/push2gh/SKILL.md
+```
+
+`.codex/hooks.json` calls the same `.agent-hooks` scripts as Claude Code for
+session context, pipeline reminders, ADR reminders, stale state warnings, and
+Bash safety checks. Current Codex releases enable hooks by default; project
+hooks may still need review/trust when Codex first opens the repository.
+
+### opencode
+
+opencode is initialized with:
+
+```text
+AGENTS.md
+opencode.json
+```
+
+`opencode.json` points opencode at `AGENTS.md` plus the standards docs:
+
+```text
+docs/standards/RULES.md
+docs/standards/QUALITY.md
+docs/standards/WORKFLOW.md
+docs/standards/REVIEW.md
+docs/standards/LIFECYCLE.md
+docs/standards/STACK.md
+docs/standards/TOOLS.md
+```
+
+The default permission posture is conservative:
+
+- edits require approval
+- Bash commands require approval by default
+- read-only exploration commands such as `git status`, `git diff`, `rg`, `ls`,
+  and `find` are allowed
+- external directory access requires approval
+
+### Runtime flow
+
+After installation, the tools line up like this:
+
+```text
+Claude Code
+  reads: CLAUDE.md
+  hooks: .claude/settings.json -> .agent-hooks/*
+  skills: .claude/skills -> .agents/skills
+  commands: .claude/commands/*
+
+Codex
+  reads: AGENTS.md
+  hooks: .codex/hooks.json -> .agent-hooks/*
+  skills: .agents/skills
+  config: .codex/config.toml
+
+opencode
+  reads: AGENTS.md + docs/standards/*
+  config: opencode.json
+  permissions: ask-by-default
+
+All tools
+  state: PROJECT_STATE.md
+  decisions: docs/decisions/*
+  standards: docs/standards/*
+  enforcement: pre-commit + CI
+```
+
+Agent hooks are guardrails, not the final security boundary. The actual merge
+gate is still `pre-commit` plus CI, so the same checks apply no matter which AI
+tool produced the change.
 
 ---
 
@@ -121,19 +285,28 @@ Common combinations:
 │       ├── LIFECYCLE.md                   (common — project lifecycle stages)
 │       ├── STACK.md                       (language overlay — framework patterns)
 │       └── TOOLS.md                       (language overlay — lint / test / security commands)
+├── AGENTS.md                              (common — Codex/opencode guidance)
+├── opencode.json                          (common — opencode instructions + permissions)
+├── .codex/
+│   ├── config.toml                        (common — project-scoped Codex defaults)
+│   └── hooks.json                         (common — Codex hooks calling .agent-hooks)
+├── .agent-hooks/                          (common — shared hook logic)
+│   ├── sessionstart-inject-state.sh       (injects STATE + ADR index at session start)
+│   ├── userpromptsubmit-remind.sh         (reminds agents to consult ADRs)
+│   ├── userpromptsubmit-pipeline.sh       (six-phase reminder trigger)
+│   ├── pretooluse-stale-check.sh          (warns when PROJECT_STATE.md is >7 days old)
+│   ├── security-check.sh                  (blocks obvious destructive/prod Bash commands)
+│   └── pipeline-reminder.txt              (six-phase reminder text)
+├── .agents/
+│   └── skills/
+│       └── push2gh/SKILL.md               (common — bundled commit → push → PR skill)
 └── .claude/
     ├── settings.json                      (common hooks + language hooks, deep-merged)
     ├── commands/                          (common — orchestrator slash commands)
     │   ├── decide.md                      (/decide — draft a new ADR)
     │   ├── state-sync.md                  (/state-sync — refresh PROJECT_STATE.md)
     │   └── supersede.md                   (/supersede ADR-NNNN — reverse a decision)
-    ├── hooks/                             (common — orchestrator hooks)
-    │   ├── sessionstart-inject-state.sh   (injects STATE + ADR index at session start)
-    │   ├── userpromptsubmit-remind.sh     (reminds Claude to consult ADRs on prior-decision keywords)
-    │   ├── pretooluse-stale-check.sh      (warns when PROJECT_STATE.md is >7 days old)
-    │   └── pipeline-reminder.txt          (six-phase reminder text)
-    └── skills/
-        └── push2gh/SKILL.md               (common — bundled commit → push → PR skill)
+    └── skills -> ../.agents/skills        (Claude compatibility symlink)
 ```
 
 ---
@@ -154,9 +327,10 @@ below is the bundled phase-6 substitute.
 
 ### Bundled project skills
 
-The installer copies these straight into `<project>/.claude/skills/<name>/`
-so they live inside the project's own git history (independent of the
-user's global skill install):
+The installer copies these straight into `<project>/.agents/skills/<name>/`
+and creates `<project>/.claude/skills -> ../.agents/skills` for Claude Code
+compatibility, so they live inside the project's own git history
+(independent of the user's global skill install):
 
 | Skill      | Purpose                                                                                  |
 |------------|------------------------------------------------------------------------------------------|

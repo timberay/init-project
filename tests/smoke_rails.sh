@@ -25,8 +25,9 @@ ok "dry-run detects rails and writes nothing"
 grep -q "Rails" "$TMP/docs/standards/STACK.md" || fail "STACK.md does not look like the Rails overlay"
 jq -e '.hooks.PreToolUse | length >= 1' "$TMP/.claude/settings.json" >/dev/null \
   || fail "merged settings.json should have at least 1 PreToolUse entry (orchestrator stale-check)"
-[[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
-head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+[[ -f "$TMP/.agents/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
+head -2 "$TMP/.agents/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+[[ -L "$TMP/.claude/skills" ]] || fail ".claude/skills symlink not installed"
 ok "push2gh skill bundled"
 
 # Orchestrator: STATE + ADR + hooks + commands must land
@@ -37,9 +38,9 @@ grep -q "^> Lifecycle Stage: Setup (since ${TODAY})$" "$TMP/PROJECT_STATE.md" \
 ok "PROJECT_STATE.md seeded with Lifecycle Stage line dated today"
 [[ -f "$TMP/docs/decisions/README.md" ]] || fail "ADR index not installed"
 [[ -f "$TMP/docs/decisions/ADR-0000-orchestrator-bootstrap.md" ]] || fail "ADR-0000 not installed"
-[[ -x "$TMP/.claude/hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
-[[ -x "$TMP/.claude/hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
-[[ -x "$TMP/.claude/hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
 [[ -f "$TMP/.claude/commands/decide.md" ]] || fail "/decide command not installed"
 [[ -f "$TMP/.claude/commands/state-sync.md" ]] || fail "/state-sync command not installed"
 [[ -f "$TMP/.claude/commands/supersede.md" ]] || fail "/supersede command not installed"
@@ -61,9 +62,11 @@ head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is no
 grep -qE "^/log/\*" "$TMP/.gitignore" || fail "Rails .gitignore missing /log/*"
 ok "Rails .gitignore bundled"
 
-! jq -e '.hooks.PreToolUse[] | select(.matcher | tostring | contains("Bash"))' "$TMP/.claude/settings.json" >/dev/null \
-  || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
-ok "ADR-0001: no PreToolUse Bash gate present"
+jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("security-check.sh"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "security-check.sh not registered for Bash guardrail"
+! jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("rails test|rubocop|pre-commit"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PreToolUse should not run quality gates (ADR-0001: gating moved to pre-commit/CI)"
+ok "ADR-0001: no PreToolUse quality gate present"
 
 [[ -f "$TMP/.pre-commit-config.yaml" ]] || fail ".pre-commit-config.yaml not installed"
 [[ -f "$TMP/.github/workflows/ci.yml" ]] || fail "ci.yml not installed"

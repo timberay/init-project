@@ -19,8 +19,9 @@ ok "dry-run detects go"
 grep -q "Go" "$TMP/docs/standards/STACK.md" || fail "STACK.md does not look like the Go overlay"
 jq -e '.hooks.PostToolUse[0].hooks[0].command | contains("gofmt")' "$TMP/.claude/settings.json" >/dev/null \
   || fail "PostToolUse hook should reference gofmt"
-[[ -f "$TMP/.claude/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
-head -2 "$TMP/.claude/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+[[ -f "$TMP/.agents/skills/push2gh/SKILL.md" ]] || fail "push2gh skill not installed"
+head -2 "$TMP/.agents/skills/push2gh/SKILL.md" | grep -q "name: push2gh" || fail "push2gh SKILL.md missing expected frontmatter"
+[[ -L "$TMP/.claude/skills" ]] || fail ".claude/skills symlink not installed"
 ok "push2gh skill bundled"
 
 # Orchestrator: STATE + ADR + hooks + commands must land
@@ -31,9 +32,9 @@ grep -q "^> Lifecycle Stage: Setup (since ${TODAY})$" "$TMP/PROJECT_STATE.md" \
 ok "PROJECT_STATE.md seeded with Lifecycle Stage line dated today"
 [[ -f "$TMP/docs/decisions/README.md" ]] || fail "ADR index not installed"
 [[ -f "$TMP/docs/decisions/ADR-0000-orchestrator-bootstrap.md" ]] || fail "ADR-0000 not installed"
-[[ -x "$TMP/.claude/hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
-[[ -x "$TMP/.claude/hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
-[[ -x "$TMP/.claude/hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/sessionstart-inject-state.sh" ]] || fail "sessionstart hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/userpromptsubmit-remind.sh" ]] || fail "userpromptsubmit hook not installed (or not executable)"
+[[ -x "$TMP/.agent-hooks/pretooluse-stale-check.sh" ]] || fail "pretooluse hook not installed (or not executable)"
 [[ -f "$TMP/.claude/commands/decide.md" ]] || fail "/decide command not installed"
 [[ -f "$TMP/.claude/commands/state-sync.md" ]] || fail "/state-sync command not installed"
 [[ -f "$TMP/.claude/commands/supersede.md" ]] || fail "/supersede command not installed"
@@ -55,9 +56,11 @@ head -3 "$TMP/.gitignore" | grep -q "github/gitignore" || fail ".gitignore is no
 grep -qE "^\*\.exe" "$TMP/.gitignore" || fail "Go .gitignore missing *.exe"
 ok "Go .gitignore bundled"
 
-! jq -e '.hooks.PreToolUse[] | select(.matcher | tostring | contains("Bash"))' "$TMP/.claude/settings.json" >/dev/null \
-  || fail "PreToolUse should not have a Bash matcher (ADR-0001: gating moved to pre-commit/CI)"
-ok "ADR-0001: no PreToolUse Bash gate present"
+jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("security-check.sh"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "security-check.sh not registered for Bash guardrail"
+! jq -e '.hooks.PreToolUse | map(.hooks[].command) | flatten | any(test("go test|golangci-lint|pre-commit"))' "$TMP/.claude/settings.json" >/dev/null \
+  || fail "PreToolUse should not run quality gates (ADR-0001: gating moved to pre-commit/CI)"
+ok "ADR-0001: no PreToolUse quality gate present"
 
 [[ -f "$TMP/.pre-commit-config.yaml" ]] || fail ".pre-commit-config.yaml not installed"
 [[ -f "$TMP/.github/workflows/ci.yml" ]] || fail "ci.yml not installed"

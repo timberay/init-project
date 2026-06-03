@@ -7,7 +7,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 ok()   { echo "ok: $1"; }
 
-SS="$ROOT/common/.claude/hooks/sessionstart-inject-state.sh"
+SS="$ROOT/common/.agent-hooks/sessionstart-inject-state.sh"
 
 # --- sessionstart-inject-state.sh ---
 
@@ -42,7 +42,7 @@ ok "sessionstart: ADR index injected when present"
 
 # --- userpromptsubmit-remind.sh ---
 
-UP="$ROOT/common/.claude/hooks/userpromptsubmit-remind.sh"
+UP="$ROOT/common/.agent-hooks/userpromptsubmit-remind.sh"
 
 # Case 1: prompt with "이전에" Korean keyword → reminder emitted
 out="$(echo '{"prompt":"이전에 결정한 DB 선택 다시 보고 싶어"}' | bash "$UP")"
@@ -89,7 +89,7 @@ ok "userpromptsubmit: silent + exit 0 on malformed JSON"
 
 # --- pretooluse-stale-check.sh ---
 
-PT="$ROOT/common/.claude/hooks/pretooluse-stale-check.sh"
+PT="$ROOT/common/.agent-hooks/pretooluse-stale-check.sh"
 
 # Case 1: non-target tool (e.g. Read) → silent
 out="$(echo '{"tool_name":"Read"}' | bash "$PT" 2>&1)"

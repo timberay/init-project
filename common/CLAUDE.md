@@ -15,7 +15,7 @@ code in this repository.
 ## Orchestrator (STATE + ADR)
 
 Two files are required reading at the start of every session — the SessionStart
-hook (`.claude/hooks/sessionstart-inject-state.sh`) already injects them, but
+hook (`.agent-hooks/sessionstart-inject-state.sh`) already injects them, but
 verify you have read them:
 
 - **`PROJECT_STATE.md`** — "where the project is right now". Current phase,
@@ -209,7 +209,8 @@ These are auto-installed by `install.sh` (skip with `--skip-skills`):
 | `andrej-karpathy-skills`     | `karpathy-skills`          | Karpathy's coding-mistake guardrails         |
 
 `graphify` and `gstack` are **verified, not installed** by the installer (it
-checks `~/.claude/skills/<name>/` and warns if absent). `gstack` is required for
+checks `~/.agents/skills/<name>/` first, then legacy `~/.claude/skills/<name>/`,
+and warns if absent). `gstack` is required for
 `WORKFLOW.md` phases 1, 2, and 6 (`/office-hours`, `/plan-eng-review`,
 `/review`, `/ship`, `/land-and-deploy`, `/document-release`). Install them
 manually if missing.
@@ -217,14 +218,15 @@ manually if missing.
 ### Bundled project skills
 
 The installer also copies the following skill straight into
-`.claude/skills/<name>/` so it lives inside the project's git history:
+`.agents/skills/<name>/` and links `.claude/skills` to that directory, so it
+lives inside the project's git history:
 
 | Skill      | Purpose                                                                   |
 |------------|---------------------------------------------------------------------------|
 | `push2gh`  | Adaptive commit → push → PR → optional automerge → cleanup. Use as a `gstack`-free substitute for `/ship` + `/land-and-deploy` in `WORKFLOW.md` phase 6. |
 
-The bundled copy is a snapshot of the global `~/.claude/skills/push2gh/`
+The bundled copy is a snapshot of the global `~/.agents/skills/push2gh/`
 taken at template build time. To upgrade, copy the latest file back into
-the template (`cp ~/.claude/skills/push2gh/SKILL.md
-~/projects/00.base-files/common/.claude/skills/push2gh/SKILL.md`) and
+the template (`cp ~/.agents/skills/push2gh/SKILL.md
+~/projects/00.base-files/common/.agents/skills/push2gh/SKILL.md`) and
 commit.

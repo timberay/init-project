@@ -9,7 +9,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 ok()   { echo "ok: $1"; }
 
-PL="$ROOT/common/.claude/hooks/userpromptsubmit-pipeline.sh"
+PL="$ROOT/common/.agent-hooks/userpromptsubmit-pipeline.sh"
 [[ -x "$PL" ]] || fail "pipeline hook is missing or not executable: $PL"
 
 emitted() {  # emitted '<json payload>' -> prints additionalContext (empty if silent)
