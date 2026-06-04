@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test: detect_language returns rails/python/go/bash from the right manifest files,
+# Test: detect_language returns rails/python/go/bash/nextjs from the right manifest files,
 # and respects the --lang override (passed as the function's positional arg).
 set -u
 
@@ -58,14 +58,40 @@ r=$(detect_in "$TMP/go-proj")
 [[ "$r" == "go" ]] || fail "go.mod -> go (got '$r')"
 ok "go.mod -> go"
 
-# Case 7: override beats detection
+# Case 7: package.json with next dependency → nextjs
+mkdir "$TMP/next-proj"
+cat > "$TMP/next-proj/package.json" <<'JSON'
+{
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
+}
+JSON
+r=$(detect_in "$TMP/next-proj")
+[[ "$r" == "nextjs" ]] || fail "package.json with next dependency -> nextjs (got '$r')"
+ok "package.json with next dependency -> nextjs"
+
+# Case 8: next.config.* → nextjs
+mkdir "$TMP/next-config-proj" && touch "$TMP/next-config-proj/next.config.js"
+r=$(detect_in "$TMP/next-config-proj")
+[[ "$r" == "nextjs" ]] || fail "next.config.* -> nextjs (got '$r')"
+ok "next.config.* -> nextjs"
+
+# Case 9: override beats detection
 mkdir "$TMP/rails-but-py"
 touch "$TMP/rails-but-py/Gemfile"
 r=$(detect_in "$TMP/rails-but-py" "python")
 [[ "$r" == "python" ]] || fail "--lang python override (got '$r')"
 ok "override beats detection"
 
-# Case 8: invalid override exits with code 2 specifically
+# Case 10: nextjs override is accepted
+r=$(detect_in "$TMP/rails-but-py" "nextjs")
+[[ "$r" == "nextjs" ]] || fail "--lang nextjs override (got '$r')"
+ok "nextjs override accepted"
+
+# Case 11: invalid override exits with code 2 specifically
 set +e
 ( cd "$TMP/rails-proj" && detect_language "nodejs" ) >/dev/null 2>&1
 rc=$?
@@ -73,13 +99,13 @@ set -e
 [[ "$rc" -eq 2 ]] || fail "invalid override should exit with code 2 (got $rc)"
 ok "invalid override rejected with rc=2"
 
-# Case 9: empty project defaults to bash
+# Case 12: empty project defaults to bash
 mkdir "$TMP/empty-proj"
 r=$(detect_in "$TMP/empty-proj")
 [[ "$r" == "bash" ]] || fail "empty project -> bash (got '$r')"
 ok "empty project defaults to bash"
 
-# Case 10: non-interactive empty project also defaults to bash
+# Case 13: non-interactive empty project also defaults to bash
 r=$( ( cd "$TMP/empty-proj" && BASE_FILES_NONINTERACTIVE=1 detect_language "" ) )
 [[ "$r" == "bash" ]] || fail "non-interactive empty project -> bash (got '$r')"
 ok "non-interactive empty project defaults to bash"

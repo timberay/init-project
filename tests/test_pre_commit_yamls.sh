@@ -8,7 +8,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 ok()   { echo "ok: $1"; }
 
-for lang in python go rails bash; do
+for lang in python go rails bash nextjs; do
   f="$ROOT/langs/$lang/.pre-commit-config.yaml"
   [[ -f "$f" ]] || fail "$lang: .pre-commit-config.yaml missing"
   grep -q "^repos:" "$f" || fail "$lang: missing top-level 'repos:' key"
@@ -31,5 +31,9 @@ grep -q "shellcheck" "$ROOT/langs/bash/.pre-commit-config.yaml" \
   || fail "bash: missing shellcheck hook"
 grep -q "shfmt" "$ROOT/langs/bash/.pre-commit-config.yaml" \
   || fail "bash: missing shfmt hook"
+grep -q "nextjs-lint" "$ROOT/langs/nextjs/.pre-commit-config.yaml" \
+  || fail "nextjs: missing nextjs-lint hook"
+grep -q "nextjs-typecheck" "$ROOT/langs/nextjs/.pre-commit-config.yaml" \
+  || fail "nextjs: missing nextjs-typecheck hook"
 
 echo "test_pre_commit_yamls.sh: ALL PASS"

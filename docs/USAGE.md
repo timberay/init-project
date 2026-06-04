@@ -1,8 +1,8 @@
 # Usage Guide
 
 Detailed reference for using `init-project` (also known as `base-files`) to
-bootstrap a new Ruby on Rails, Python, Go, or Bash/Shell project with Claude Code
-guidance, pre-commit hooks, and recommended plugins.
+bootstrap a new Ruby on Rails, Python, Go, Bash/Shell, or Next.js project with
+Claude Code guidance, pre-commit hooks, and recommended plugins.
 
 For a one-page quick start, see [README](../README.md). This document is the
 deeper companion that covers every flag, every phase, every edge case, and how
@@ -36,8 +36,8 @@ to extend the template to a new language.
 `init-project` is a **template-and-installer** pair, not a code library and
 not a framework scaffolder. Its job is to drop a consistent set of guidance
 documents and Claude Code hook configuration into every new project you start,
-so that you (and Claude) approach Rails, Python, Go, and shell-first projects
-with the same discipline and the right tooling.
+so that you (and Claude) approach Rails, Python, Go, shell-first, and Next.js
+projects with the same discipline and the right tooling.
 
 Concretely, `install.sh` does six things, in order, in roughly five seconds:
 
@@ -52,10 +52,11 @@ Concretely, `install.sh` does six things, in order, in roughly five seconds:
    `claude plugin` CLI (idempotent — already-installed plugins are skipped).
 
 The template intentionally does **not** scaffold framework code. You are
-expected to run `rails new .`, `uv init`, `go mod init <module>`, or your
-preferred shell project setup yourself. The template adds the guidance and
-hooks *around* that framework, not in place of it. If no manifest exists yet,
-the installer applies the `bash` overlay by default.
+expected to run `rails new .`, `uv init`, `go mod init <module>`,
+`npx create-next-app@latest .`, or your preferred shell project setup yourself.
+The template adds the guidance and hooks *around* that framework, not in place
+of it. If no manifest exists yet, the installer applies the `bash` overlay by
+default.
 
 ---
 
@@ -77,7 +78,7 @@ You need these on the machine before running the installer.
 |-----------|-----------------------------------------------------------------------------|---------------------------------------------|
 | `claude`  | Installing the recommended Claude Code plugins automatically.                | If absent, the installer skips phase 6 with a warning and your files are still placed. |
 | `gh`      | Convenient for the subsequent step of creating a remote repository.          | Not used by the installer itself.           |
-| Language runtime | The matching runtime for your overlay (`ruby`, `python3`, `go`, or `bash`). | Reported but not installed by the installer. |
+| Language runtime | The matching runtime for your overlay (`ruby`, `python3`, `go`, `bash`, or `node`/`npm`). | Reported but not installed by the installer. |
 
 The installer will report any missing tool with the exact install command for
 your platform. It never installs anything system-wide on your behalf.
@@ -181,6 +182,17 @@ go mod init github.com/myorg/my-go-app
 git init && git add . && git commit -m "Initial commit"
 ```
 
+### Next.js
+
+```bash
+mkdir -p ~/projects/my-next-app && cd ~/projects/my-next-app
+npx create-next-app@latest .
+
+~/projects/00.base-files/install.sh
+
+git init && git add . && git commit -m "Initial commit"
+```
+
 ### Empty directory (no manifest yet)
 
 If you run the installer in an empty directory, language auto-detection
@@ -191,8 +203,8 @@ mkdir -p ~/projects/blank && cd ~/projects/blank
 ~/projects/00.base-files/install.sh
 ```
 
-Pass `--lang <rails|python|go|bash>` when you already know the target stack and
-want to override detection.
+Pass `--lang <rails|python|go|bash|nextjs>` when you already know the target
+stack and want to override detection.
 
 ---
 
@@ -211,6 +223,7 @@ order:
 | `Gemfile` or `*.gemspec`  | `rails`         |
 | `pyproject.toml`, `requirements.txt`, or `Pipfile` | `python` |
 | `go.mod`                  | `go`            |
+| `package.json` with a `next` dependency, or `next.config.*` | `nextjs` |
 | (none)                    | `bash`          |
 
 The `--lang` flag overrides detection unconditionally.
@@ -287,7 +300,7 @@ phase entirely (e.g., in CI or when `claude` CLI is not on PATH).
 
 | Flag             | Default | Effect |
 |------------------|---------|--------|
-| `--lang <x>`     | auto-detect | Force the overlay to `rails`, `python`, `go`, or `bash`. Skips manifest detection. |
+| `--lang <x>`     | auto-detect | Force the overlay to `rails`, `python`, `go`, `bash`, or `nextjs`. Skips manifest detection. |
 | `--dry-run`      | off     | Print the plan and exit. No files written, no `claude plugin` calls made. Safe to run anywhere. |
 | `--force`        | off     | Skip the per-file overwrite prompt. Existing files are always backed up with a timestamp suffix and overwritten. Pair with `--dry-run` to see exactly what would change. |
 | `--skip-skills`  | off     | Skip phase 6 (plugin installation) entirely. Use this when `claude` CLI is missing, in CI, or when you manage plugins another way. |
@@ -321,6 +334,7 @@ BASE_FILES_NONINTERACTIVE=1 ~/projects/00.base-files/install.sh \
 | `REQUIRED_LANG_python=(...)`   | Override the Python-side runtime list (default: `python3`). |
 | `REQUIRED_LANG_go=(...)`       | Override the Go-side runtime list (default: `go`). |
 | `REQUIRED_LANG_bash=(...)`     | Override the Bash-side runtime list (default: `bash`). |
+| `REQUIRED_LANG_nextjs=(...)`   | Override the Next.js-side runtime list (default: `node npm`). |
 
 ### Exit codes
 
@@ -792,7 +806,6 @@ Recommended next overlays, in order:
 
 | Candidate | Detect by | Why add it |
 |-----------|-----------|------------|
-| `nextjs` / `typescript` | `package.json` with `next`, `next.config.*`, `tsconfig.json` | Highest-value next web-app overlay; needs ESLint, type-check, test, and build gates. |
 | `node` | `package.json` without `next` | Covers CLIs, libraries, Express/Fastify APIs, and general JavaScript/TypeScript projects. |
 | `rust` | `Cargo.toml` | Excellent CLI/system-project fit with `cargo fmt`, `clippy`, and `test`. |
 | `java-spring` | `pom.xml`, `build.gradle`, or `build.gradle.kts` | Common backend stack with Maven/Gradle conventions. |
@@ -800,8 +813,8 @@ Recommended next overlays, in order:
 | `php-laravel` | `composer.json` with `laravel/framework` | Common web-app stack with Pint/PHPStan/Pest or PHPUnit conventions. |
 | `iac` | `*.tf`, `Chart.yaml`, `kustomization.yaml` | DevOps-heavy repos need Terraform/Helm/Kubernetes validation and secret scanning. |
 
-Add `nextjs` first if you frequently create web apps; split out a general
-`node` overlay later when non-Next JavaScript/TypeScript projects become common.
+Add a general `node` overlay next when non-Next JavaScript/TypeScript projects
+become common.
 
 To support Rust, Elixir, Crystal, or any other language:
 
@@ -869,7 +882,7 @@ Create `tests/smoke_rust.sh` mirroring `tests/smoke_python.sh`. Then:
 RUN_SMOKE=1 ./tests/run_all.sh
 ```
 
-Confirm `passed: 11 / failed: 0` (10 existing + 1 new smoke).
+Confirm the pass count increases by one and `failed: 0`.
 
 ### 12.6 Update `check-deps.sh`
 
@@ -1036,7 +1049,7 @@ cd ~/projects/00.base-files
 
 # Unit + end-to-end smoke tests (driving the real installer in temp dirs)
 RUN_SMOKE=1 ./tests/run_all.sh
-# → passed: 10 / failed: 0
+# → passed: 16 / failed: 0
 ```
 
 ### What the tests cover
@@ -1044,7 +1057,7 @@ RUN_SMOKE=1 ./tests/run_all.sh
 | Test file                          | Module                       | What it checks |
 |------------------------------------|------------------------------|-----------------|
 | `tests/test_log.sh`                | `lib/log.sh`                 | Each log function prefix; NO_COLOR contract; stderr routing of `log_warn`/`log_error` |
-| `tests/test_detect_language.sh`    | `lib/detect-language.sh`     | Rails/Python/Go manifests detected; empty projects default to Bash; `--lang` override beats detection; invalid override → exit 2 |
+| `tests/test_detect_language.sh`    | `lib/detect-language.sh`     | Rails/Python/Go/Next.js manifests detected; empty projects default to Bash; `--lang` override beats detection; invalid override → exit 2 |
 | `tests/test_check_deps.sh`         | `lib/check-deps.sh`          | Real deps not falsely missing; injected fake dep is recorded in `MISSING_DEPS` |
 | `tests/test_copy_files.sh`         | `lib/copy-files.sh`          | Fresh copy; conflict overwrites with backup; dry-run writes nothing |
 | `tests/test_merge_settings.sh`     | `lib/merge-settings.sh`      | Hook arrays concatenated; dry-run is read-only; missing input fails |
@@ -1052,7 +1065,8 @@ RUN_SMOKE=1 ./tests/run_all.sh
 | `tests/smoke_rails.sh`             | end-to-end                   | `Gemfile` triggers rails overlay; dry-run writes nothing; real run lands files + ≥2 PreToolUse hooks |
 | `tests/smoke_python.sh`            | end-to-end                   | `pyproject.toml` triggers python overlay; PostToolUse references `ruff` |
 | `tests/smoke_go.sh`                | end-to-end                   | `go.mod` triggers go overlay; PostToolUse references `gofmt` |
-| `tests/smoke_empty.sh`             | end-to-end                   | Empty dir + non-interactive → fails with `--lang` hint; `--lang go` succeeds |
+| `tests/smoke_nextjs.sh`            | end-to-end                   | Next.js `package.json` triggers nextjs overlay; PostToolUse references `prettier`/`eslint` |
+| `tests/smoke_empty.sh`             | end-to-end                   | Empty dir defaults to the bash overlay; shared agent files and bootstrap commit work |
 
 ### Adding a new test
 
