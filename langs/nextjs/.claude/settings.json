@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v jq >/dev/null 2>&1 || exit 0; jq -r '.tool_input.file_path' | { read -r f; case \"$f\" in *.js|*.jsx|*.ts|*.tsx) if command -v npx >/dev/null && [[ -f package.json ]]; then npx --no-install prettier --write \"$f\" >/dev/null 2>&1 || true; npx --no-install eslint \"$f\" 2>&1 || true; fi ;; esac; } 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Formatting and linting Next.js file..."
+          }
+        ]
+      }
+    ]
+  }
+}

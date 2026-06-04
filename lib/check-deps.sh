@@ -12,6 +12,7 @@ fi
 : "${REQUIRED_LANG_python:=}"; [[ -z "${REQUIRED_LANG_python:-}" ]] && REQUIRED_LANG_python=(python3)
 : "${REQUIRED_LANG_go:=}"; [[ -z "${REQUIRED_LANG_go:-}" ]] && REQUIRED_LANG_go=(go)
 : "${REQUIRED_LANG_bash:=}"; [[ -z "${REQUIRED_LANG_bash:-}" ]] && REQUIRED_LANG_bash=(bash)
+: "${REQUIRED_LANG_nextjs:=}"; [[ -z "${REQUIRED_LANG_nextjs:-}" ]] && REQUIRED_LANG_nextjs=(node npm)
 
 _install_hint() {
   case "$1" in
@@ -22,6 +23,8 @@ _install_hint() {
     python3) echo "brew install pyenv && pyenv install 3.12   # or use system package" ;;
     go)      echo "brew install go               # or use system package" ;;
     bash)    echo "brew install bash             # or use system package" ;;
+    node)    echo "brew install node             # or use nvm/fnm/asdf" ;;
+    npm)     echo "ships with Node.js            # or reinstall Node.js" ;;
     shellcheck) echo "brew install shellcheck       # or: sudo apt install -y shellcheck" ;;
     shfmt)   echo "brew install shfmt            # or: go install mvdan.cc/sh/v3/cmd/shfmt@latest" ;;
     claude)     echo "see https://docs.claude.com/claude-code for the install script" ;;
@@ -41,6 +44,7 @@ check_deps() {
     python) for t in "${REQUIRED_LANG_python[@]}"; do all+=("$t"); done ;;
     go)     for t in "${REQUIRED_LANG_go[@]}";     do all+=("$t"); done ;;
     bash)   for t in "${REQUIRED_LANG_bash[@]}";   do all+=("$t"); done ;;
+    nextjs) for t in "${REQUIRED_LANG_nextjs[@]}"; do all+=("$t"); done ;;
   esac
 
   for t in "${all[@]}"; do

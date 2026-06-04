@@ -4,7 +4,7 @@ Multi-language base template for new projects. One command installs common
 guidance, language-specific tooling, an ADR-backed orchestrator, and
 recommended Claude Code plugins into a fresh project directory.
 
-Supported overlays: **Rails 8 · Python (FastAPI/Django) · Go · Bash/Shell**.
+Supported overlays: **Rails 8 · Python (FastAPI/Django) · Go · Bash/Shell · Next.js**.
 
 > One-page quick start below. For the full reference (every flag, every
 > phase, walkthroughs per language, troubleshooting, and how to add a new
@@ -24,8 +24,8 @@ Supported overlays: **Rails 8 · Python (FastAPI/Django) · Go · Bash/Shell**.
 | Claude CLI   | installs the recommended plugins | <https://docs.claude.com/en/docs/claude-code>          |
 
 Each language overlay also needs its own toolchain: Ruby + Bundler + Rails
-for `rails`, `uv` (or `pip`) for `python`, `go` 1.22+ for `go`, and Bash
-plus optional `shellcheck`/`shfmt` for `bash`.
+for `rails`, `uv` (or `pip`) for `python`, `go` 1.22+ for `go`, Bash
+plus optional `shellcheck`/`shfmt` for `bash`, and Node.js + npm for `nextjs`.
 
 **Bootstrap a new project** (Rails shown — Python / Go / Bash differ only in
 step 2):
@@ -40,6 +40,7 @@ rails new . --minimal                  # Rails
 # or:  uv init                         # Python
 # or:  go mod init example.com/my-app  # Go
 # or:  touch scripts/bootstrap.sh       # Bash/Shell, or leave empty
+# or:  npx create-next-app@latest .     # Next.js
 
 # 3. Drop the overlay on top
 ~/projects/init-project/install.sh
@@ -67,8 +68,9 @@ committing. `rails new --minimal` omits it by default.
 ## What `install.sh` does
 
 1. **Detects the language** from `Gemfile` / `pyproject.toml` (or
-   `requirements.txt`, `Pipfile`) / `go.mod`. Empty or unrecognized projects
-   default to the `bash` overlay. Override with `--lang <x>`.
+   `requirements.txt`, `Pipfile`) / `go.mod` / Next.js `package.json` or
+   `next.config.*`. Empty or unrecognized projects default to the `bash`
+   overlay. Override with `--lang <x>`.
 2. **Verifies OS tools** (`jq`, `git`, language runtime). Missing tools
    are **reported**, never auto-installed.
 3. **Copies files** — `common/` + the matching `langs/<lang>/` into the
@@ -86,7 +88,7 @@ committing. `rails new --minimal` omits it by default.
 
 | Flag             | Purpose                                                           |
 |------------------|-------------------------------------------------------------------|
-| `--lang <x>`     | Override auto-detection (`rails`, `python`, `go`, `bash`)         |
+| `--lang <x>`     | Override auto-detection (`rails`, `python`, `go`, `bash`, `nextjs`) |
 | `--dry-run`      | Print the plan; do not write files or invoke `claude plugin`      |
 | `--force`        | Overwrite existing files (backed up with `*.bak.YYYYMMDD-HHMMSS`) |
 | `--skip-skills`  | Skip plugin installation entirely                                 |
@@ -103,12 +105,11 @@ Common combinations:
 
 ### Recommended future overlays
 
-The current overlays cover Rails, Python, Go, and shell-first projects. Good
-next candidates:
+The current overlays cover Rails, Python, Go, shell-first projects, and
+Next.js. Good next candidates:
 
 | Candidate | Detect by | Why add it |
 |-----------|-----------|------------|
-| `nextjs` / `typescript` | `package.json` with `next`, `next.config.*`, `tsconfig.json` | Most useful next web-app overlay: TypeScript/React/Next.js projects need ESLint, type-check, test, and build gates. |
 | `node` | `package.json` without `next` | Covers CLIs, libraries, Express/Fastify APIs, and general JavaScript/TypeScript tooling. |
 | `rust` | `Cargo.toml` | Strong fit for CLI/system projects with deterministic `cargo fmt`, `clippy`, and `test` commands. |
 | `java-spring` | `pom.xml`, `build.gradle`, or `build.gradle.kts` | Common backend stack; needs Maven/Gradle test and formatting conventions. |
@@ -116,8 +117,8 @@ next candidates:
 | `php-laravel` | `composer.json` with `laravel/framework` | Common web-app stack with Pint/PHPStan/Pest or PHPUnit conventions. |
 | `iac` | `*.tf`, `Chart.yaml`, `kustomization.yaml` | DevOps-heavy repos need Terraform/Helm/Kubernetes validation and stricter secret checks. |
 
-Recommended order: add `nextjs` first, then split a more general `node`
-overlay if non-Next JavaScript projects become common.
+Recommended order: split a more general `node` overlay next if non-Next
+JavaScript projects become common.
 
 ---
 

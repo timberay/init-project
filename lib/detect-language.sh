@@ -1,8 +1,8 @@
 # lib/detect-language.sh — choose one language overlay for a target directory.
 # Usage (sourced): detect_language [<override>]
-# Prints rails|python|go|bash to stdout, hints to stderr.
+# Prints rails|python|go|bash|nextjs to stdout, hints to stderr.
 
-_BASE_FILES_LANGS=(rails python go bash)
+_BASE_FILES_LANGS=(rails python go bash nextjs)
 
 _is_valid_lang() {
   local candidate="$1"
@@ -33,6 +33,14 @@ detect_language() {
   fi
   if [[ -f go.mod ]]; then
     printf 'go\n'; return 0
+  fi
+  if [[ -f package.json ]]; then
+    if grep -Eq '"next"[[:space:]]*:' package.json; then
+      printf 'nextjs\n'; return 0
+    fi
+  fi
+  if compgen -G "next.config.*" >/dev/null 2>&1; then
+    printf 'nextjs\n'; return 0
   fi
 
   log_warn "no language manifest detected in $(pwd); defaulting to bash overlay"
